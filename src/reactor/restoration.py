@@ -105,6 +105,7 @@ class CommonFaceRestoration(FaceRestoration):
             save_ext='png',
             use_parse=True,
             device=device,
+            model_rootpath=os.path.join(settings.MODELS_PATH, 'facexlib')
         )
 
     @cached_property

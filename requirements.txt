@@ -1,0 +1,11 @@
+facexlib==0.3.0
+insightface==0.7.3
+numpy==1.26.4
+onnx==1.16.1
+onnxruntime==1.18.1
+onnxruntime-gpu==1.18.1
+opencv-python>=4.7.0.72
+pillow>=10.4.0
+spandrel==0.2.2
+torch==2.3.1
+torchvision==0.18.1

@@ -166,9 +166,6 @@ def get_face_single(
         )
 
     try:
-        # FIXME: seem like bullshit to me, age and gender is detected with no messing with faces order, but
-        #   in this case, faces are sorted by bbox
-        # TODO: retest when done
         return sorted(face, key=lambda x: x.bbox[0])[face_index], 0, face_age, face_gender
     except IndexError:
         return None, 0, face_age, face_gender

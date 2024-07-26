@@ -3,11 +3,32 @@ import os
 from typing import Union, Tuple
 
 import numpy as np
+from PIL import Image
 
 from . import settings
 from .logger import suppress_output
 from .modloader import get_analysis_model
 from .shared import logger
+
+
+def analyze(
+        image: Image.Image | str,
+        det_size=(640, 640),
+        det_thresh=0.5,
+        det_maxnum=0
+):
+    import cv2
+    from . import images
+
+    img = images.get_image(image)
+    # noinspection PyTypeChecker
+    source_img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+    return analyze_faces(
+        source_img,
+        det_size=det_size,
+        det_thresh=det_thresh,
+        det_maxnum=det_maxnum
+    )
 
 
 def analyze_faces(

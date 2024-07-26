@@ -63,8 +63,10 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
     Args:
         resize_mode: The mode to use when resizing the image.
             0: Resize the image to the specified width and height.
-            1: Resize the image to fill the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, cropping the excess.
-            2: Resize the image to fit within the specified width and height, maintaining the aspect ratio, and then center the image within the dimensions, filling empty with data from image.
+            1: Resize the image to fill the specified width and height, maintaining the aspect ratio,
+                and then center the image within the dimensions, cropping the excess.
+            2: Resize the image to fit within the specified width and height, maintaining the aspect ratio,
+                and then center the image within the dimensions, filling empty with data from image.
         im: The image to resize.
         width: The width to resize the image to.
         height: The height to resize the image to.

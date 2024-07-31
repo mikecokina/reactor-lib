@@ -12,7 +12,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = "For more information visit https://github.com/mikecokina/reactor-lib/blob/master/README.md"
 
 setup(
-    name='reactor',
+    name='reactorlib',
     src_root='src',
     version=get_version(),
 
@@ -92,7 +92,7 @@ setup(
     # installed, specify them here.  If using Python 2.6 or less, then these
     # have to be included in MANIFEST.in as well.
     package_data={
-        'reactor': [
+        'reactorlib': [
             'conf/*',
             'conf/logging_schemas/*',
         ],

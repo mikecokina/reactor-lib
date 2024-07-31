@@ -1,4 +1,4 @@
-from typing import Union, Iterable, List
+from typing import Union, List
 
 import cv2
 import numpy as np

@@ -17,9 +17,8 @@ The face swap python library based on sd-webui-reactor extension
 
 ## Example
 
-
 ```python
-from reactor import settings, swap, DetectionOptions, EnhancementOptions
+from reactorlib import settings, swap, DetectionOptions, EnhancementOptions
 
 
 def main():

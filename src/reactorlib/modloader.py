@@ -6,7 +6,8 @@ import insightface
 
 from . import settings
 from .logger import suppress_output
-from .shared import logger, download_model
+from .shared import download_model
+from .logger import logger
 
 
 def load_spandrel_model(

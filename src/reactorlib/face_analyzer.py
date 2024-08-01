@@ -8,7 +8,7 @@ from PIL import Image
 from . import settings
 from .logger import suppress_output
 from .modloader import get_analysis_model
-from .shared import logger
+from .logger import logger
 
 
 def analyze(

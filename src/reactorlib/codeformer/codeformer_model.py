@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import logging
 import os
-import warnings
 
 import numpy as np
 import torch
 
 from PIL import Image
 
+from ..logger import logger
 from .. import settings
 from ..conf.settings import EnhancementOptions
+from ..logger import suppress_output
 from ..modloader import load_spandrel_model
 from ..restoration import CommonFaceRestoration, FaceRestoration
 from ..shared import download_model
@@ -56,12 +56,9 @@ def setup_model(dirname: str) -> None:
 
 def _restore_face(image: Image, enhancement_options: EnhancementOptions):
     result_image = image
-
     if enhancement_options.face_restorer is not None:
         original_image = result_image.copy()
         numpy_image = np.array(result_image)
-        logging.info(f"Restoring the face with {codeformer.name()} (weight: {enhancement_options.codeformer_weight})")
-
         numpy_image = codeformer.restore(
             numpy_image, w=enhancement_options.codeformer_weight
         )
@@ -74,8 +71,8 @@ def _restore_face(image: Image, enhancement_options: EnhancementOptions):
 
 
 def enhance_image(image: Image, enhancement_options: EnhancementOptions):
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
+    logger.info(f"Restoring the face with {codeformer.name()} (weight: {enhancement_options.codeformer_weight})")
+    with suppress_output():
         result_image = image
         return _restore_face(result_image, enhancement_options)
 

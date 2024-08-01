@@ -53,6 +53,7 @@ class FaceArea:
         else:
             return Image.fromarray(cv2.resize(cropped, dsize=(face_size, face_size)))
 
+    # noinspection PyAugmentAssignment
     @staticmethod
     def __ensure_margin(left: int, top: int, right: int, bottom: int, entire_image: np.ndarray, margin: float):
         entire_height, entire_width = entire_image.shape[:2]
@@ -92,6 +93,7 @@ class FaceArea:
         if eye2 is None or eye1 is None:
             return 0
 
+        # noinspection PyBroadException
         try:
             dx = eye2.x - eye1.x
             dy = eye2.y - eye1.y

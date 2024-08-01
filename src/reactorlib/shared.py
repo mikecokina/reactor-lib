@@ -5,9 +5,6 @@ from pathlib import Path
 import torch
 
 from . import settings
-from . logger import getLogger
-
-logger = getLogger('reactor-lib')
 
 
 def get_cuda_device_string():

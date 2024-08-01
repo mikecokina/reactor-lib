@@ -14,7 +14,8 @@ from .entities.face import FaceArea
 from .entities.rect import Rect
 from .inferencers.bisenet_mask_generator import BiSeNetMaskGenerator
 from .modloader import get_face_swap_model
-from .shared import logger, color_generator, listdir
+from .shared import color_generator, listdir
+from .logger import logger
 
 
 # noinspection PyUnusedLocal
@@ -178,7 +179,7 @@ def operate(
     return result_image, swapped
 
 
-def _batch(
+def _bulk(
         source_image: Image.Image | str,
         input_directory: str,
         output_directory: str,
@@ -186,8 +187,19 @@ def _batch(
         target_faces_index: List[int],
         enhancement_options: EnhancementOptions,
         detection_options: DetectionOptions,
-        face_mask_correction: bool
+        face_mask_correction: bool,
+        progressbar: bool
 ) -> Tuple[None, int]:
+    try:
+        if progressbar:
+            from tqdm import tqdm
+        else:
+            raise ImportError()
+    except ImportError:
+        def _tqdm(x, *args, **kwargs):
+            return x
+        tqdm = _tqdm
+
     gender_source: int = 0
     gender_target: int = 0
     swapped = 0
@@ -228,7 +240,7 @@ def _batch(
         if source_age != "None" or source_gender != "None":
             logger.info(f"Analyzed source: -{source_age}- y.o. {source_gender}")
 
-    for target_image in target_images:
+    for target_image in tqdm(target_images):
         target_image = Path(target_image)
         output_image = Path(output_directory) / f"{target_image.stem}.png"
         target_img = images.get_image(str(target_image))
@@ -364,8 +376,12 @@ def swap(
         target_faces_index: Union[List[int], None] = None,
         enhancement_options: Union[EnhancementOptions, None] = None,
         detection_options: Union[DetectionOptions, None] = None,
-        face_mask_correction: bool = False
+        face_mask_correction: bool = False,
+        progressbar: bool = False
 ) -> Tuple[Image.Image, int] | Tuple[None, int]:
+    if progressbar:
+        logger.get().configure(**dict(SUPPRESS_LOGGER=True))
+
     if detection_options is None:
         detection_options = DetectionOptions()
     if enhancement_options is None:
@@ -385,7 +401,7 @@ def swap(
 
     # Batch - single is prioritized
     if target_image is None and input_directory is not None and output_directory is not None:
-        return _batch(
+        return _bulk(
             source_image=source_image,
             input_directory=input_directory,
             output_directory=output_directory,
@@ -393,7 +409,8 @@ def swap(
             target_faces_index=target_faces_index,
             enhancement_options=enhancement_options,
             detection_options=detection_options,
-            face_mask_correction=face_mask_correction
+            face_mask_correction=face_mask_correction,
+            progressbar=progressbar
         )
 
     # Single - single is prioritized

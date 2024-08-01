@@ -13,7 +13,7 @@ import torch
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
 
 from . import shared, settings, images
-from . shared import logger
+from .logger import logger
 
 
 def restore_with_face_helper(

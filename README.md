@@ -15,7 +15,7 @@ The face swap python library based on sd-webui-reactor extension
 `pip install git+https://github.com/mikecokina/reactor-lib.git@master`
 
 
-## Example
+## Example for single image
 
 ```python
 from reactorlib import settings, swap, DetectionOptions, EnhancementOptions
@@ -44,6 +44,41 @@ def main():
         target_image="/absolute/path/to/target/image.<ext>",
         target_faces_index=[0],
         source_faces_index=[0],
+        enhancement_options=enhancement_options,
+        detection_options=detection_options
+    )
+
+
+if __name__ == "__main__":
+    main()
+```
+
+
+## Example for batch processing from single source image
+
+```python
+from reactorlib import settings, swap, DetectionOptions, EnhancementOptions
+
+
+def main():
+    settings.configure(**{
+        'DEVICE': 'CUDA',
+    })
+
+    enhancement_options = EnhancementOptions(
+        upscale_visibility=0.5,
+        restorer_visibility=1.0,
+        codeformer_weight=0.5,
+    )
+
+    detection_options = DetectionOptions(det_thresh=0.5, det_maxnum=0)
+
+    _, n_swapped = swap(
+        source_image="/absolute/path/to/source/image.<ext>",
+        target_faces_index=[0],
+        source_faces_index=[0],
+        input_directory="/absolute/path/to/target/images",
+        output_directory="/absolute/path/to/store/results",
         enhancement_options=enhancement_options,
         detection_options=detection_options
     )

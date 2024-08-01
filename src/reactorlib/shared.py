@@ -1,7 +1,7 @@
 import glob
 import os
-from typing import Iterable
-
+from typing import Iterable, List
+from pathlib import Path
 import torch
 
 from . import settings
@@ -41,3 +41,22 @@ def get_insightface_models(models_path: str):
     models_ = glob.glob(models_path)
     models_ = [x for x in models_ if x.endswith(".onnx") or x.endswith(".pth")]
     return models_
+
+
+def listdir(directory: str, filter_ext: List = None):
+    if filter_ext is not None:
+        filter_ext = set(filter_ext)
+
+    file_list = []
+    for root, dirs, files in os.walk(directory):
+        for file in files:
+            to_append = None
+            if filter_ext is None:
+                to_append = os.path.join(root, file)
+            else:
+                if Path(file).suffix in filter_ext:
+                    to_append = os.path.join(root, file)
+            if to_append is not None:
+                file_list.append(to_append)
+
+    return file_list

@@ -1,3 +1,4 @@
+import os
 from typing import List, Tuple
 
 import cv2
@@ -13,7 +14,10 @@ from .. import settings
 
 class BiSeNetMaskGenerator(MaskGenerator):
     def __init__(self) -> None:
-        self.mask_model = init_parsing_model(device=settings.device)
+        self.mask_model = init_parsing_model(
+            device=settings.device,
+            model_rootpath=os.path.join(settings.MODELS_PATH, 'facexlib')
+        )
 
     def name(self):
         return "BiSeNet"

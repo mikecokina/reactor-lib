@@ -47,6 +47,8 @@ class _Const(object):
         (0, 128, 128),
     ]
 
+    SUPPORTED_FORMATS = ['.jpg', '.jpeg', '.png']
+
 
 class DefaultSettings(object):
     LOG_CONFIG: str = op.join(op.dirname(op.abspath(__file__)), 'logging_schemas/default.json')

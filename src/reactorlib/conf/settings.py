@@ -87,7 +87,6 @@ class Settings(_Const, DefaultSettings):
             "DEVICE_ID": cls.DEVICE_ID,
             "MODELS_PATH": cls.MODELS_PATH,
             "NO_HALF": cls.NO_HALF,
-            "FACE_RESTORATION_MODEL_DIR": cls.FACE_RESTORATION_MODEL_DIR,
             "PROVIDERS": cls.PROVIDERS,
         }
 
@@ -118,6 +117,8 @@ class Settings(_Const, DefaultSettings):
                     cls.PROVIDERS = ["CUDAExecutionProvider"]
                 else:
                     cls.PROVIDERS = ["CPUExecutionProvider"]
+            if key == 'MODELS_PATH':
+                cls.FACE_RESTORATION_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'codeformer')
 
     @property
     def device(self):

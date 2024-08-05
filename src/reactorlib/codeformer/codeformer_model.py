@@ -12,11 +12,8 @@ from .. import settings
 from ..conf.settings import EnhancementOptions
 from ..logger import suppress_output
 from ..modloader import load_spandrel_model
-from ..restoration import CommonFaceRestoration, FaceRestoration
+from ..restoration import CommonFaceRestoration
 from ..shared import download_model
-
-
-codeformer: FaceRestoration | None = None
 
 
 class FaceRestorerCodeFormer(CommonFaceRestoration):
@@ -48,18 +45,17 @@ class FaceRestorerCodeFormer(CommonFaceRestoration):
 
         return self.restore_with_helper(np_image, restore_face)
 
+    @staticmethod
+    def setup_model(dirname: str) -> FaceRestorerCodeFormer:
+        return FaceRestorerCodeFormer(dirname)
 
-def setup_model(dirname: str) -> None:
-    global codeformer
-    codeformer = FaceRestorerCodeFormer(dirname)
 
-
-def _restore_face(image: Image, enhancement_options: EnhancementOptions):
+def _restore_face(image: Image, instance: FaceRestorerCodeFormer, enhancement_options: EnhancementOptions):
     result_image = image
     if enhancement_options.face_restorer is not None:
         original_image = result_image.copy()
         numpy_image = np.array(result_image)
-        numpy_image = codeformer.restore(
+        numpy_image = instance.restore(
             numpy_image, w=enhancement_options.codeformer_weight
         )
         restored_image = Image.fromarray(numpy_image)
@@ -71,10 +67,12 @@ def _restore_face(image: Image, enhancement_options: EnhancementOptions):
 
 
 def enhance_image(image: Image, enhancement_options: EnhancementOptions):
-    logger.info(f"Restoring the face with {codeformer.name()} (weight: {enhancement_options.codeformer_weight})")
+    codeformer = FaceRestorerCodeFormer.setup_model(settings.FACE_RESTORATION_MODEL_DIR)
+    logger.info(f"Restoring the face with CodeFormer (weight: {codeformer.name()})")
     with suppress_output():
         result_image = image
-        return _restore_face(result_image, enhancement_options)
-
-
-setup_model(settings.FACE_RESTORATION_MODEL_DIR)
+        return _restore_face(
+            image=result_image,
+            instance=codeformer,
+            enhancement_options=enhancement_options
+        )

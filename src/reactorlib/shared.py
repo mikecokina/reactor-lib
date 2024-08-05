@@ -5,6 +5,7 @@ from pathlib import Path
 import torch
 
 from . import settings
+from .logger import logger
 
 
 def get_cuda_device_string():
@@ -23,7 +24,7 @@ def torch_gc():
 def download_model(model_path, model_url):
     if not os.path.exists(model_path):
         os.makedirs(os.path.dirname(model_path), exist_ok=True)
-        print(f'Downloading model to: {model_path}')
+        logger.info(f'Downloading model to: {model_path}')
         torch.hub.download_url_to_file(model_url, model_path)
 
 

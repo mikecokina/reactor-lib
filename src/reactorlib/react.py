@@ -14,7 +14,7 @@ from .entities.face import FaceArea
 from .entities.rect import Rect
 from .inferencers.bisenet_mask_generator import BiSeNetMaskGenerator
 from .modloader import get_face_swap_model
-from .shared import color_generator, listdir
+from .shared import color_generator, listdir, torch_gc
 from .logger import logger
 
 
@@ -188,6 +188,7 @@ def _bulk(
         enhancement_options: EnhancementOptions,
         detection_options: DetectionOptions,
         face_mask_correction: bool,
+        enhance_target_first: bool,
         progressbar: bool
 ) -> Tuple[None, int]:
     try:
@@ -241,10 +242,12 @@ def _bulk(
             logger.info(f"Analyzed source: -{source_age}- y.o. {source_gender}")
 
     for target_image in tqdm(target_images):
+        logger.info(f"Processing {target_image}")
         target_image = Path(target_image)
         output_image = Path(output_directory) / f"{target_image.stem}.png"
         target_img = images.get_image(str(target_image))
 
+        torch_gc()
         result_image_, swapped_ = _single(
             source_image=source_image,
             target_image=target_img,
@@ -254,7 +257,8 @@ def _bulk(
             detection_options=detection_options,
             source_face=source_face,
             source_faces=source_faces,
-            face_mask_correction=face_mask_correction
+            face_mask_correction=face_mask_correction,
+            enhance_target_first=enhance_target_first
         )
 
         swapped += swapped_
@@ -274,13 +278,18 @@ def _single(
         detection_options: DetectionOptions,
         source_face=None,
         source_faces: List = None,
-        face_mask_correction: bool = False
+        face_mask_correction: bool = False,
+        enhance_target_first: bool = False,
 ) -> Tuple[Image.Image, int]:
     # Single
     source_img = images.get_image(source_image)
     target_img = images.get_image(target_image)
-
     target_img_org = target_img.copy()
+
+    if enhance_target_first:
+        logger.info('Fixing face in target image first')
+        target_img = enhance_image(target_img, enhancement_options)
+
     # noinspection PyTypeChecker
     target_img = cv2.cvtColor(np.array(target_img), cv2.COLOR_RGB2BGR)
     target_img_orig = cv2.cvtColor(np.array(target_img), cv2.COLOR_RGB2BGR)
@@ -377,6 +386,7 @@ def swap(
         enhancement_options: Union[EnhancementOptions, None] = None,
         detection_options: Union[DetectionOptions, None] = None,
         face_mask_correction: bool = False,
+        enhance_target_first: bool = False,
         progressbar: bool = False
 ) -> Tuple[Image.Image, int] | Tuple[None, int]:
     if progressbar:
@@ -410,6 +420,7 @@ def swap(
             enhancement_options=enhancement_options,
             detection_options=detection_options,
             face_mask_correction=face_mask_correction,
+            enhance_target_first=enhance_target_first,
             progressbar=progressbar
         )
 
@@ -422,5 +433,6 @@ def swap(
             target_faces_index=target_faces_index,
             enhancement_options=enhancement_options,
             detection_options=detection_options,
-            face_mask_correction=face_mask_correction
+            face_mask_correction=face_mask_correction,
+            enhance_target_first=enhance_target_first
         )

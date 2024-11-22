@@ -11,6 +11,31 @@ from .modloader import get_analysis_model
 from .logger import logger
 
 
+class FaceAnalyserCache(object):
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(FaceAnalyserCache, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if not hasattr(self, "_model"):
+            self._model = None  # Initialize instance attribute
+
+    @property
+    def model(self):
+        """Getter for the model attribute"""
+        return self._model
+
+    @model.setter
+    def model(self, value):
+        self._model = value
+
+
+face_analyser_cache = FaceAnalyserCache()
+
+
 def analyze(
         image: Image.Image | str,
         det_size=(640, 640),
@@ -35,12 +60,15 @@ def analyze_faces(
         img_data: np.ndarray,
         det_size=(640, 640),
         det_thresh=0.5,
-        det_maxnum=0
+        det_maxnum=0,
 ):
     with suppress_output():
-        face_analyser = copy.deepcopy(get_analysis_model(settings.MODELS_PATH))
-        face_analyser.prepare(ctx_id=0, det_thresh=det_thresh, det_size=det_size)
-        return face_analyser.get(img_data, max_num=det_maxnum)
+        if face_analyser_cache.model is None:
+            face_analyser = copy.deepcopy(get_analysis_model(settings.MODELS_PATH))
+            face_analyser_cache.model = face_analyser
+
+        face_analyser_cache.model.prepare(ctx_id=0, det_thresh=det_thresh, det_size=det_size)
+        return face_analyser_cache.model.get(img_data, max_num=det_maxnum)
 
 
 def _get_face_gender_logic(face, face_index, gender_condition, operated, face_gender):

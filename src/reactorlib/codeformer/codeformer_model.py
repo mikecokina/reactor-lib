@@ -16,6 +16,31 @@ from ..restoration import CommonFaceRestoration
 from ..shared import download_model
 
 
+class CodeFormerCache(object):
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(CodeFormerCache, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if not hasattr(self, "_model"):
+            self._model = None  # Initialize instance attribute
+
+    @property
+    def model(self):
+        """Getter for the model attribute"""
+        return self._model
+
+    @model.setter
+    def model(self, value):
+        self._model = value
+
+
+code_former_cache = CodeFormerCache()
+
+
 class FaceRestorerCodeFormer(CommonFaceRestoration):
     def name(self):
         return "CodeFormer"
@@ -67,12 +92,15 @@ def _restore_face(image: Image, instance: FaceRestorerCodeFormer, enhancement_op
 
 
 def enhance_image(image: Image, enhancement_options: EnhancementOptions):
-    codeformer = FaceRestorerCodeFormer.setup_model(settings.FACE_RESTORATION_MODEL_DIR)
-    logger.info(f"Restoring the face with CodeFormer (weight: {codeformer.name()})")
+    if not code_former_cache.model:
+        codeformer = FaceRestorerCodeFormer.setup_model(settings.FACE_RESTORATION_MODEL_DIR)
+        code_former_cache.model = codeformer
+
+    logger.info(f"Restoring the face with CodeFormer (weight: {code_former_cache.model.name()})")
     with suppress_output():
         result_image = image
         return _restore_face(
             image=result_image,
-            instance=codeformer,
+            instance=code_former_cache.model,
             enhancement_options=enhancement_options
         )

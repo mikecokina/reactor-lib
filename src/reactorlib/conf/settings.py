@@ -24,6 +24,13 @@ class EnhancementOptions:
     upscale_force: bool = False
 
 
+@dataclass
+class FaceBlurOptions:
+    do_face_blur: bool = False
+    radius: int = 3,
+    strength: float = 0.5
+
+
 class _Const(object):
     FACE_SWAP_MODEL_DOWNLOAD_NAME: str = "inswapper_128.onnx"
     FACE_SWAP_MODEL_URL: str = "https://github.com/facefusion/facefusion-assets/releases" \

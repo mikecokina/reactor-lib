@@ -6,10 +6,12 @@ import cv2
 import numpy as np
 
 from PIL import Image
+from PIL import ImageFilter
+from insightface.app.common import Face
 
 from . import settings, images, face_analyzer
 from .codeformer.codeformer_model import enhance_image
-from .conf.settings import EnhancementOptions, DetectionOptions
+from .conf.settings import EnhancementOptions, DetectionOptions, FaceBlurOptions
 from .entities.face import FaceArea
 from .entities.rect import Rect
 from .inferencers.bisenet_mask_generator import BiSeNetMaskGenerator
@@ -35,6 +37,41 @@ def _process_face_image(face: FaceArea, **kwargs) -> Image:
     return Image.fromarray(output)
 
 
+def _apply_blur(
+    image: np.ndarray,
+    target_img: np.ndarray,
+    target_face: Face,
+    face_blur_options: FaceBlurOptions
+) -> Image.Image:
+
+    mask_generator = BiSeNetMaskGenerator()
+    face = FaceArea(target_img, Rect.from_ndarray(np.array(target_face.bbox)), 1.6, 512, "")
+    face_image = np.array(face.image)
+    _process_face_image(face)
+    face_area_on_image = face.face_area_on_image
+    mask = mask_generator.generate_mask(
+        face_image,
+        face_area_on_image=face_area_on_image,
+        affected_areas=["Face"],
+        mask_size=0,
+        use_minimal_area=True
+    )
+    mask = cv2.blur(mask, (12, 12))
+    larger_mask = cv2.resize(mask, dsize=(face.width, face.height))
+    entire_mask_image = np.zeros_like(np.array(target_img))
+    entire_mask_image[face.top: face.bottom, face.left: face.right] = larger_mask
+
+    image = Image.fromarray(image.astype(np.uint8))
+    # Apply Gaussian blur to the entire image
+    blurred_image = image.filter(ImageFilter.GaussianBlur(face_blur_options.radius))
+
+    # Adjust the mask intensity based on blur strength
+    adjusted_mask = Image.fromarray(entire_mask_image).convert('L').point(lambda p: int(p * face_blur_options.strength))
+
+    # Composite the original and blurred image based on the mask
+    return Image.composite(blurred_image, image, adjusted_mask)
+
+
 def _apply_face_mask(
         swapped_image: np.ndarray,
         target_image: np.ndarray,
@@ -43,6 +80,7 @@ def _apply_face_mask(
 ) -> np.ndarray:
     logger.info("Correcting face mask")
 
+    # TODO: use rmbg2.0 as mask generator
     mask_generator = BiSeNetMaskGenerator()
     face = FaceArea(target_image, Rect.from_ndarray(np.array(target_face.bbox)), 1.6, 512, "")
     face_image = np.array(face.image)
@@ -85,10 +123,12 @@ def operate(
         detection_options,
         face_mask_correction,
         entire_mask_image,
+        face_blur_options
 ) -> Tuple[Image.Image, int]:
     result = target_img
     face_swapper = get_face_swap_model()
     wrong_gender = 0
+    target_face = None
 
     # Single source and several targets
     if len(source_faces_index) == 1:
@@ -176,6 +216,15 @@ def operate(
 
     if (enhancement_options is not None and swapped > 0) or enhancement_options.upscale_force:
         result_image = enhance_image(result_image, enhancement_options)
+
+    if face_blur_options.do_face_blur and target_face is not None:
+        result_image = _apply_blur(
+            image=np.array(result_image),
+            target_img=target_img,
+            target_face=target_face,
+            face_blur_options=face_blur_options
+        )
+
     return result_image, swapped
 
 
@@ -187,6 +236,7 @@ def _bulk(
         target_faces_index: List[int],
         enhancement_options: EnhancementOptions,
         detection_options: DetectionOptions,
+        face_blur_options: FaceBlurOptions,
         face_mask_correction: bool,
         enhance_target_first: bool,
         progressbar: bool
@@ -258,7 +308,8 @@ def _bulk(
             source_face=source_face,
             source_faces=source_faces,
             face_mask_correction=face_mask_correction,
-            enhance_target_first=enhance_target_first
+            enhance_target_first=enhance_target_first,
+            face_blur_options=face_blur_options
         )
 
         swapped += swapped_
@@ -276,6 +327,7 @@ def _single(
         target_faces_index: List[int],
         enhancement_options: EnhancementOptions,
         detection_options: DetectionOptions,
+        face_blur_options: FaceBlurOptions,
         source_face=None,
         source_faces: List = None,
         face_mask_correction: bool = False,
@@ -367,8 +419,9 @@ def _single(
             swapped=swapped,
             enhancement_options=enhancement_options,
             detection_options=detection_options,
+            face_blur_options=face_blur_options,
             face_mask_correction=face_mask_correction,
-            entire_mask_image=entire_mask_image
+            entire_mask_image=entire_mask_image,
         )
     else:
         raise NotImplementedError("Any other option is not implemented yet, requires source image")
@@ -384,6 +437,7 @@ def swap(
         source_faces_index: Union[List[int], None] = None,
         target_faces_index: Union[List[int], None] = None,
         enhancement_options: Union[EnhancementOptions, None] = None,
+        face_blur_options: Union[FaceBlurOptions, None] = None,
         detection_options: Union[DetectionOptions, None] = None,
         face_mask_correction: bool = False,
         enhance_target_first: bool = False,
@@ -396,6 +450,8 @@ def swap(
         detection_options = DetectionOptions()
     if enhancement_options is None:
         enhancement_options = EnhancementOptions()
+    if face_blur_options is None:
+        face_blur_options = FaceBlurOptions()
 
     if source_faces_index is None:
         source_faces_index = [0]
@@ -419,6 +475,7 @@ def swap(
             target_faces_index=target_faces_index,
             enhancement_options=enhancement_options,
             detection_options=detection_options,
+            face_blur_options=face_blur_options,
             face_mask_correction=face_mask_correction,
             enhance_target_first=enhance_target_first,
             progressbar=progressbar
@@ -432,7 +489,8 @@ def swap(
             source_faces_index=source_faces_index,
             target_faces_index=target_faces_index,
             enhancement_options=enhancement_options,
+            face_blur_options=face_blur_options,
             detection_options=detection_options,
             face_mask_correction=face_mask_correction,
-            enhance_target_first=enhance_target_first
+            enhance_target_first=enhance_target_first,
         )

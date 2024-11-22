@@ -18,7 +18,7 @@ The face swap python library based on sd-webui-reactor extension
 ## Example for single image
 
 ```python
-from reactorlib import settings, swap, DetectionOptions, EnhancementOptions
+from reactorlib import settings, swap, DetectionOptions, EnhancementOptions, FaceBlurOptions
 
 
 def main():
@@ -36,6 +36,9 @@ def main():
         restorer_visibility=1.0,
         codeformer_weight=0.5,
     )
+    
+    face_blur_options = FaceBlurOptions(do_face_blur=True, radius=3, strength=0.3)
+
 
     detection_options = DetectionOptions(det_thresh=0.5, det_maxnum=0)
 
@@ -45,7 +48,8 @@ def main():
         target_faces_index=[0],
         source_faces_index=[0],
         enhancement_options=enhancement_options,
-        detection_options=detection_options
+        detection_options=detection_options,
+        face_blur_options=face_blur_options
     )
 
 

@@ -1,5 +1,6 @@
 import glob
 import os
+import re
 from typing import Iterable, List
 from pathlib import Path
 import torch
@@ -56,5 +57,11 @@ def listdir(directory: str, filter_ext: List = None):
                     to_append = os.path.join(root, file)
             if to_append is not None:
                 file_list.append(to_append)
+
+    try:
+        file_list = sorted(file_list, key=lambda x: int(re.search(r'(\d+)', Path(x).stem).group()))
+    except AttributeError:
+        # Skip number like ordering if not possible
+        pass
 
     return file_list

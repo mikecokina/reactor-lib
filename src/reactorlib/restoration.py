@@ -4,23 +4,62 @@ import os
 from functools import cached_property
 from typing import Callable, Union
 
+import PIL.Image
 import cv2
 import numpy as np
 import spandrel
 import torch
 
-
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
 
-from . import shared, settings, images
-from .logger import logger
+from . import shared, settings, images, face_analyzer
+from . entities.face import FaceArea
+from . entities.rect import Rect
+from . logger import logger
+from . inferencers.bisenet_mask_generator import BiSeNetMaskGenerator
+
+
+def get_face_mask(
+        image: np.ndarray,
+        detection_options,
+) -> np.ndarray:
+    try:
+        analyzed_face = face_analyzer.analyze_faces(
+            image,
+            det_thresh=detection_options.det_thresh,
+            det_maxnum=detection_options.det_maxnum
+        )[0]
+
+        mask_generator = BiSeNetMaskGenerator()
+        face = FaceArea(image, Rect.from_ndarray(np.array(analyzed_face.bbox)), 1.6, 512, "")
+        face_image = np.array(face.image)
+        face_area_on_image = face.face_area_on_image
+        face_mask_arr = mask_generator.generate_mask(
+            face_image,
+            face_area_on_image=face_area_on_image,
+            affected_areas=["Face"],
+            mask_size=1,
+            use_minimal_area=False
+        )
+        face_mask_arr = cv2.blur(face_mask_arr, (12, 12))
+        larger_mask = cv2.resize(face_mask_arr, dsize=(face.width, face.height))
+        entire_mask_image = np.zeros_like(np.array(image))
+        entire_mask_image[face.top: face.bottom, face.left: face.right] = larger_mask
+
+    except IndexError:
+        # In case of error, mask is an entire image
+        entire_mask_image = np.ones(image.shape, dtype=np.uint8) * 255
+
+    return entire_mask_image
 
 
 def restore_with_face_helper(
         np_image: np.ndarray,
         face_helper: FaceRestoreHelper,
         restore_face: Callable[[torch.Tensor], torch.Tensor],
+        enhancement_options
 ) -> np.ndarray:
+
     from torchvision.transforms.functional import normalize
     np_image = np_image[:, :, ::-1]
     original_resolution = np_image.shape[0:2]
@@ -50,6 +89,17 @@ def restore_with_face_helper(
 
             restored_face = images.rgb_tensor_to_bgr_image(cropped_face_t, min_max=(-1, 1))
             restored_face = (restored_face * 255.0).astype('uint8')
+
+            # Face only if required
+            if enhancement_options.restore_face_only:
+                face_mask_arr = get_face_mask(cropped_face, detection_options=enhancement_options.detection_options)
+                # noinspection PyTypeChecker
+                restored_face = np.array(PIL.Image.composite(
+                    PIL.Image.fromarray(restored_face),
+                    PIL.Image.fromarray(cropped_face),
+                    PIL.Image.fromarray(face_mask_arr).convert('L')
+                ))
+
             face_helper.add_restored_face(restored_face)
 
         logger.debug("Merging restored faces into image")
@@ -131,12 +181,14 @@ class CommonFaceRestoration(FaceRestoration):
         self,
         np_image: np.ndarray,
         restore_face: Callable[[torch.Tensor], torch.Tensor],
+        enhancement_options
     ) -> np.ndarray:
         self.net = self.load_net()
 
-        # try:
         self.send_model_to(self.get_device())
-        return restore_with_face_helper(np_image, self.face_helper, restore_face)
-        # finally:
-        #     if shared.opts.face_restoration_unload:
-        #         self.send_model_to(devices.cpu)
+        return restore_with_face_helper(
+            np_image,
+            self.face_helper,
+            restore_face,
+            enhancement_options
+        )

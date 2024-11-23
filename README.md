@@ -32,15 +32,24 @@ def main():
     })
 
     enhancement_options = EnhancementOptions(
+        do_enhancement=True,
         upscale_visibility=0.5,
         restorer_visibility=1.0,
         codeformer_weight=0.5,
+        restore_face_only=False,
+        detection_options=DetectionOptions(
+            det_thresh=0.25,
+            det_maxnum=0
+        )
     )
-    
-    face_blur_options = FaceBlurOptions(do_face_blur=True, radius=3, strength=0.3)
-
-
-    detection_options = DetectionOptions(det_thresh=0.5, det_maxnum=0)
+    detection_options = DetectionOptions(det_thresh=0.65, det_maxnum=0)
+    face_blur_options = FaceBlurOptions(
+        do_face_blur=True,
+        do_video_noise=True,
+        blur_radius=2,
+        blur_strength=0.2,
+        noise_pixel_size=2
+    )
 
     result_image, n_swapped = swap(
         source_image="/absolute/path/to/source/image.<ext>",
@@ -61,7 +70,7 @@ if __name__ == "__main__":
 ## Example for batch processing from single source image
 
 ```python
-from reactorlib import settings, swap, DetectionOptions, EnhancementOptions
+from reactorlib import settings, swap, DetectionOptions, EnhancementOptions, FaceBlurOptions
 
 
 def main():
@@ -70,12 +79,24 @@ def main():
     })
 
     enhancement_options = EnhancementOptions(
+        do_enhancement=True,
         upscale_visibility=0.5,
         restorer_visibility=1.0,
         codeformer_weight=0.5,
+        restore_face_only=False,
+        detection_options=DetectionOptions(
+            det_thresh=0.25,
+            det_maxnum=0
+        )
     )
-
-    detection_options = DetectionOptions(det_thresh=0.5, det_maxnum=0)
+    detection_options = DetectionOptions(det_thresh=0.65, det_maxnum=0)
+    face_blur_options = FaceBlurOptions(
+        do_face_blur=True,
+        do_video_noise=True,
+        blur_radius=2,
+        blur_strength=0.2,
+        noise_pixel_size=2
+    )
 
     _, n_swapped = swap(
         source_image="/absolute/path/to/source/image.<ext>",
@@ -84,7 +105,12 @@ def main():
         input_directory="/absolute/path/to/target/images",
         output_directory="/absolute/path/to/store/results",
         enhancement_options=enhancement_options,
-        detection_options=detection_options
+        detection_options=detection_options,
+        face_blur_options=face_blur_options,
+        face_mask_correction=True,
+        face_mask_correction_size=10,
+        skip_if_exists=False,
+        progressbar=False,
     )
 
 

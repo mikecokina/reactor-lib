@@ -59,7 +59,12 @@ class FaceRestorerCodeFormer(CommonFaceRestoration):
     def get_device(self):
         return settings.device
 
-    def restore(self, np_image, w: float | None = None):
+    def restore(
+            self,
+            np_image,
+            w: float | None = None,
+            enhancement_options=None
+    ):
         if w is None:
             w = EnhancementOptions.codeformer_weight
 
@@ -68,20 +73,30 @@ class FaceRestorerCodeFormer(CommonFaceRestoration):
             # noinspection PyArgumentList
             return self.net(cropped_face_t, weight=w, adain=True)[0]
 
-        return self.restore_with_helper(np_image, restore_face)
+        return self.restore_with_helper(
+            np_image,
+            restore_face,
+            enhancement_options,
+        )
 
     @staticmethod
     def setup_model(dirname: str) -> FaceRestorerCodeFormer:
         return FaceRestorerCodeFormer(dirname)
 
 
-def _restore_face(image: Image, instance: FaceRestorerCodeFormer, enhancement_options: EnhancementOptions):
+def _restore_face(
+        image: Image,
+        instance: FaceRestorerCodeFormer,
+        enhancement_options: EnhancementOptions,
+):
     result_image = image
     if enhancement_options.face_restorer is not None:
         original_image = result_image.copy()
         numpy_image = np.array(result_image)
         numpy_image = instance.restore(
-            numpy_image, w=enhancement_options.codeformer_weight
+            numpy_image,
+            w=enhancement_options.codeformer_weight,
+            enhancement_options=enhancement_options
         )
         restored_image = Image.fromarray(numpy_image)
         result_image = Image.blend(
@@ -91,16 +106,19 @@ def _restore_face(image: Image, instance: FaceRestorerCodeFormer, enhancement_op
     return result_image
 
 
-def enhance_image(image: Image, enhancement_options: EnhancementOptions):
+def enhance_image(
+        image: Image,
+        enhancement_options: EnhancementOptions,
+) -> np.ndarray:
     if not code_former_cache.model:
         codeformer = FaceRestorerCodeFormer.setup_model(settings.FACE_RESTORATION_MODEL_DIR)
         code_former_cache.model = codeformer
 
-    logger.info(f"Restoring the face with CodeFormer (weight: {code_former_cache.model.name()})")
+    logger.info(f"Restoring the face with CodeFormer (weight: {enhancement_options.codeformer_weight})")
     with suppress_output():
         result_image = image
         return _restore_face(
             image=result_image,
             instance=code_former_cache.model,
-            enhancement_options=enhancement_options
+            enhancement_options=enhancement_options,
         )

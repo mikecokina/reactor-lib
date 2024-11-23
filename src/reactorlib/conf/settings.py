@@ -1,7 +1,7 @@
 import json
 import os
 import os.path as op
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from logging import config as log_conf
 
@@ -14,6 +14,7 @@ class DetectionOptions:
 
 @dataclass
 class EnhancementOptions:
+    do_enhancement: bool = True
     do_restore_first: bool = True
     scale: int = 1
     upscaler: None = None
@@ -22,13 +23,20 @@ class EnhancementOptions:
     restorer_visibility: float = 0.5
     codeformer_weight: float = 0.5
     upscale_force: bool = False
+    restore_face_only: bool = False
+    detection_options: DetectionOptions = field(default_factory=DetectionOptions)
 
 
 @dataclass
 class FaceBlurOptions:
     do_face_blur: bool = False
-    radius: int = 3,
-    strength: float = 0.5
+    do_video_noise: bool = False
+    blur_radius: int = 3,
+    blur_strength: float = 0.5
+    noise_pixel_size: int = 1
+    noise_strength: float = 0.1
+    seed: float = 0
+    mask_size: int = 0
 
 
 class _Const(object):

@@ -1,4 +1,5 @@
 import os.path
+import random
 from pathlib import Path
 from typing import Union, List, Tuple
 
@@ -37,46 +38,97 @@ def _process_face_image(face: FaceArea, **kwargs) -> Image:
     return Image.fromarray(output)
 
 
+def pad_bbox(bbox: Union[Tuple, List], w: int, h: int, pad_percent: float):
+    if pad_percent == 0:
+        return bbox
+
+    x1, y1, x2, y2 = bbox
+
+    # Calculate padding in pixels
+    pad_x = (x2 - x1) * pad_percent / 100
+    pad_y = (y2 - y1) * pad_percent / 100
+
+    # Apply padding
+    padded_x1 = max(0, x1 - pad_x)  # Clamp to minimum 0
+    padded_y1 = max(0, y1 - pad_y)  # Clamp to minimum 0
+    padded_x2 = min(w, x2 + pad_x)  # Clamp to maximum width
+    padded_y2 = min(h, y2 + pad_y)  # Clamp to maximum height
+
+    return int(padded_x1), int(padded_y1), int(padded_x2), int(padded_y2)
+
+
 def _apply_blur(
     image: np.ndarray,
     target_img: np.ndarray,
     target_face: Face,
     face_blur_options: FaceBlurOptions
 ) -> Image.Image:
+    random.seed(face_blur_options.seed)
 
     mask_generator = BiSeNetMaskGenerator()
     face = FaceArea(target_img, Rect.from_ndarray(np.array(target_face.bbox)), 1.6, 512, "")
     face_image = np.array(face.image)
     _process_face_image(face)
     face_area_on_image = face.face_area_on_image
-    mask = mask_generator.generate_mask(
+    face_mask_arr = mask_generator.generate_mask(
         face_image,
         face_area_on_image=face_area_on_image,
-        affected_areas=["Face"],
-        mask_size=0,
-        use_minimal_area=True
+        affected_areas=["Face", "Neck", "Hair"],
+        mask_size=face_blur_options.mask_size,
+        use_minimal_area=False
     )
-    mask = cv2.blur(mask, (12, 12))
-    larger_mask = cv2.resize(mask, dsize=(face.width, face.height))
+    face_mask_arr = cv2.blur(face_mask_arr, (12, 12))
+
+    larger_mask = cv2.resize(face_mask_arr, dsize=(face.width, face.height))
     entire_mask_image = np.zeros_like(np.array(target_img))
     entire_mask_image[face.top: face.bottom, face.left: face.right] = larger_mask
+    # entire_mask_image_pil = Image.fromarray(entire_mask_image).convert('L')
 
-    image = Image.fromarray(image.astype(np.uint8))
-    # Apply Gaussian blur to the entire image
-    blurred_image = image.filter(ImageFilter.GaussianBlur(face_blur_options.radius))
+    # Transform image to PIL
+    pil_image = Image.fromarray(image.astype(np.uint8))
+    image_ = pil_image.copy()
 
-    # Adjust the mask intensity based on blur strength
-    adjusted_mask = Image.fromarray(entire_mask_image).convert('L').point(lambda p: int(p * face_blur_options.strength))
+    # Apply Gaussian blur
+    if face_blur_options.do_face_blur:
+        image_ = image_.filter(ImageFilter.GaussianBlur(face_blur_options.blur_radius))
 
-    # Composite the original and blurred image based on the mask
-    return Image.composite(blurred_image, image, adjusted_mask)
+    # Apply Video Noise Effect
+    if face_blur_options.do_video_noise:
+        # Get original image size
+        original_size = image_.size
+        # Step 1: Pixelate the image by resizing it down and back up
+        small_size = (original_size[0] // face_blur_options.noise_pixel_size, original_size[1]
+                      // face_blur_options.noise_pixel_size)
+        pixelated = image_.resize(small_size, Image.NEAREST)  # Resizing down using nearest neighbor (blocky effect)
+        pixelated = pixelated.resize(original_size, Image.NEAREST)  # Resize back to original size
+        # Step 2: Add random noise (grainy effect) on top of the pixelated image
+        noisy_image = Image.new("RGB", original_size)
+        for x in range(original_size[0]):
+            for y in range(original_size[1]):
+                # Get pixel from the pixelated image
+                pixel = pixelated.getpixel((x, y))
+
+                # Add noise to each channel (R, G, B)
+                noisy_pixel = tuple(
+                    min(255, max(0, int(pixel[i] + random.uniform(-1, 1) * face_blur_options.noise_strength * 255)))
+                    for i in range(3)
+                )
+                noisy_image.putpixel((x, y), noisy_pixel)
+        image_ = noisy_image
+
+    adjusted_mask = Image.fromarray(entire_mask_image).convert('L').point(
+        lambda p: int(p * face_blur_options.blur_strength)
+    )
+
+    return Image.composite(image_, pil_image, adjusted_mask)
 
 
 def _apply_face_mask(
         swapped_image: np.ndarray,
         target_image: np.ndarray,
         target_face,
-        entire_mask_image: np.array
+        entire_mask_image: np.array,
+        face_mask_correction_size: int = 0
 ) -> np.ndarray:
     logger.info("Correcting face mask")
 
@@ -90,7 +142,7 @@ def _apply_face_mask(
         face_image,
         face_area_on_image=face_area_on_image,
         affected_areas=["Face"],
-        mask_size=0,
+        mask_size=face_mask_correction_size,
         use_minimal_area=True
     )
     mask = cv2.blur(mask, (12, 12))
@@ -123,7 +175,8 @@ def operate(
         detection_options,
         face_mask_correction,
         entire_mask_image,
-        face_blur_options
+        face_blur_options,
+        face_mask_correction_size: int
 ) -> Tuple[Image.Image, int]:
     result = target_img
     face_swapper = get_face_swap_model()
@@ -156,7 +209,8 @@ def operate(
                             swapped_image=result,
                             target_image=target_img,
                             target_face=target_face,
-                            entire_mask_image=entire_mask_image
+                            entire_mask_image=entire_mask_image,
+                            face_mask_correction_size=face_mask_correction_size
                         )
 
                     swapped += 1
@@ -207,22 +261,25 @@ def operate(
                     swapped_image=result,
                     target_image=target_img,
                     target_face=target_face,
-                    entire_mask_image=entire_mask_image
+                    entire_mask_image=entire_mask_image,
+                    face_mask_correction_size=face_mask_correction_size
                 )
 
             swapped += 1
 
     result_image = Image.fromarray(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
 
-    if (enhancement_options is not None and swapped > 0) or enhancement_options.upscale_force:
+    if (enhancement_options.do_enhancement or enhancement_options.upscale_force) and swapped > 0:
         result_image = enhance_image(result_image, enhancement_options)
 
-    if face_blur_options.do_face_blur and target_face is not None:
+    if (face_blur_options.do_face_blur or face_blur_options.do_video_noise) and target_face is not None:
+        logger.info("Applying blur to final image")
         result_image = _apply_blur(
             image=np.array(result_image),
             target_img=target_img,
             target_face=target_face,
             face_blur_options=face_blur_options
+
         )
 
     return result_image, swapped
@@ -238,7 +295,9 @@ def _bulk(
         detection_options: DetectionOptions,
         face_blur_options: FaceBlurOptions,
         face_mask_correction: bool,
+        face_mask_correction_size: int,
         enhance_target_first: bool,
+        skip_if_exists: bool,
         progressbar: bool
 ) -> Tuple[None, int]:
     try:
@@ -295,6 +354,11 @@ def _bulk(
         logger.info(f"Processing {target_image}")
         target_image = Path(target_image)
         output_image = Path(output_directory) / f"{target_image.stem}.png"
+
+        if skip_if_exists and os.path.isfile(output_image):
+            logger.info(f"Image {output_image} already exists")
+            continue
+
         target_img = images.get_image(str(target_image))
 
         torch_gc()
@@ -309,7 +373,8 @@ def _bulk(
             source_faces=source_faces,
             face_mask_correction=face_mask_correction,
             enhance_target_first=enhance_target_first,
-            face_blur_options=face_blur_options
+            face_blur_options=face_blur_options,
+            face_mask_correction_size=face_mask_correction_size
         )
 
         swapped += swapped_
@@ -330,6 +395,7 @@ def _single(
         face_blur_options: FaceBlurOptions,
         source_face=None,
         source_faces: List = None,
+        face_mask_correction_size: int,
         face_mask_correction: bool = False,
         enhance_target_first: bool = False,
 ) -> Tuple[Image.Image, int]:
@@ -422,6 +488,7 @@ def _single(
             face_blur_options=face_blur_options,
             face_mask_correction=face_mask_correction,
             entire_mask_image=entire_mask_image,
+            face_mask_correction_size=face_mask_correction_size
         )
     else:
         raise NotImplementedError("Any other option is not implemented yet, requires source image")
@@ -440,7 +507,9 @@ def swap(
         face_blur_options: Union[FaceBlurOptions, None] = None,
         detection_options: Union[DetectionOptions, None] = None,
         face_mask_correction: bool = False,
+        face_mask_correction_size: int = 0,
         enhance_target_first: bool = False,
+        skip_if_exists: bool = False,
         progressbar: bool = False
 ) -> Tuple[Image.Image, int] | Tuple[None, int]:
     if progressbar:
@@ -477,7 +546,9 @@ def swap(
             detection_options=detection_options,
             face_blur_options=face_blur_options,
             face_mask_correction=face_mask_correction,
+            face_mask_correction_size=face_mask_correction_size,
             enhance_target_first=enhance_target_first,
+            skip_if_exists=skip_if_exists,
             progressbar=progressbar
         )
 
@@ -493,4 +564,5 @@ def swap(
             detection_options=detection_options,
             face_mask_correction=face_mask_correction,
             enhance_target_first=enhance_target_first,
+            face_mask_correction_size=face_mask_correction_size
         )

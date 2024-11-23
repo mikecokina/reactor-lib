@@ -37,6 +37,7 @@ def main():
         restorer_visibility=1.0,
         codeformer_weight=0.5,
         restore_face_only=False,
+        enhance_target_first=False,
         detection_options=DetectionOptions(
             det_thresh=0.25,
             det_maxnum=0
@@ -84,6 +85,7 @@ def main():
         restorer_visibility=1.0,
         codeformer_weight=0.5,
         restore_face_only=False,
+        enhance_target_first=False,
         detection_options=DetectionOptions(
             det_thresh=0.25,
             det_maxnum=0
@@ -112,9 +114,40 @@ def main():
         skip_if_exists=False,
         progressbar=False,
     )
+    
+    
+if __name__ == '__main__':
+    main()
+```
+    
+## Example for CodeFormer (solves issues with hair)
+
+```python
+import PIL.Image
+from reactorlib import EnhancementOptions, DetectionOptions, enhance_image, settings
 
 
-if __name__ == "__main__":
+def main():
+    settings.configure(**{
+        'DEVICE': 'CUDA',
+    })
+
+    image = PIL.Image.open("</path/to/image.ext>")
+    enhancement_options = EnhancementOptions(
+        do_enhancement=True,
+        upscale_visibility=0.5,
+        restorer_visibility=1.0,
+        codeformer_weight=0.5,
+        restore_face_only=True,  # this does the job
+        detection_options=DetectionOptions(
+            det_thresh=0.25,
+            det_maxnum=0
+        )  # this plays role in face mask detection
+    )
+    result = enhance_image(image, enhancement_options)
+
+
+if __name__ == '__main__':
     main()
 ```
 

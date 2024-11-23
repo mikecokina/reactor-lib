@@ -16,6 +16,7 @@ class DetectionOptions:
 class EnhancementOptions:
     do_enhancement: bool = True
     do_restore_first: bool = True
+    enhance_target_first: bool = False
     scale: int = 1
     upscaler: None = None
     upscale_visibility: float = 0.5

@@ -85,13 +85,14 @@ class FaceRestorerCodeFormer(CommonFaceRestoration):
 
 
 def _restore_face(
-        image: Image,
+        image: Image.Image,
         instance: FaceRestorerCodeFormer,
         enhancement_options: EnhancementOptions,
-):
+) -> Image.Image:
     result_image = image
     if enhancement_options.face_restorer is not None:
         original_image = result_image.copy()
+        # noinspection PyTypeChecker
         numpy_image = np.array(result_image)
         numpy_image = instance.restore(
             numpy_image,
@@ -109,16 +110,16 @@ def _restore_face(
 def enhance_image(
         image: Image,
         enhancement_options: EnhancementOptions,
-) -> np.ndarray:
+) -> Image.Image:
     if not code_former_cache.model:
         codeformer = FaceRestorerCodeFormer.setup_model(settings.FACE_RESTORATION_MODEL_DIR)
         code_former_cache.model = codeformer
 
     logger.info(f"Restoring the face with CodeFormer (weight: {enhancement_options.codeformer_weight})")
     with suppress_output():
-        result_image = image
-        return _restore_face(
-            image=result_image,
+        result_image = _restore_face(
+            image=image,
             instance=code_former_cache.model,
             enhancement_options=enhancement_options,
         )
+    return result_image

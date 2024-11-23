@@ -296,7 +296,6 @@ def _bulk(
         face_blur_options: FaceBlurOptions,
         face_mask_correction: bool,
         face_mask_correction_size: int,
-        enhance_target_first: bool,
         skip_if_exists: bool,
         progressbar: bool
 ) -> Tuple[None, int]:
@@ -372,7 +371,6 @@ def _bulk(
             source_face=source_face,
             source_faces=source_faces,
             face_mask_correction=face_mask_correction,
-            enhance_target_first=enhance_target_first,
             face_blur_options=face_blur_options,
             face_mask_correction_size=face_mask_correction_size
         )
@@ -397,14 +395,13 @@ def _single(
         source_faces: List = None,
         face_mask_correction_size: int,
         face_mask_correction: bool = False,
-        enhance_target_first: bool = False,
 ) -> Tuple[Image.Image, int]:
     # Single
     source_img = images.get_image(source_image)
     target_img = images.get_image(target_image)
     target_img_org = target_img.copy()
 
-    if enhance_target_first:
+    if enhancement_options.enhance_target_first:
         logger.info('Fixing face in target image first')
         target_img = enhance_image(target_img, enhancement_options)
 
@@ -508,7 +505,6 @@ def swap(
         detection_options: Union[DetectionOptions, None] = None,
         face_mask_correction: bool = False,
         face_mask_correction_size: int = 0,
-        enhance_target_first: bool = False,
         skip_if_exists: bool = False,
         progressbar: bool = False
 ) -> Tuple[Image.Image, int] | Tuple[None, int]:
@@ -547,7 +543,6 @@ def swap(
             face_blur_options=face_blur_options,
             face_mask_correction=face_mask_correction,
             face_mask_correction_size=face_mask_correction_size,
-            enhance_target_first=enhance_target_first,
             skip_if_exists=skip_if_exists,
             progressbar=progressbar
         )
@@ -563,6 +558,5 @@ def swap(
             face_blur_options=face_blur_options,
             detection_options=detection_options,
             face_mask_correction=face_mask_correction,
-            enhance_target_first=enhance_target_first,
             face_mask_correction_size=face_mask_correction_size
         )

@@ -269,7 +269,7 @@ def operate(
 
     result_image = Image.fromarray(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
 
-    if (enhancement_options.do_enhancement or enhancement_options.upscale_force) and swapped > 0:
+    if enhancement_options.do_enhancement and swapped > 0:
         result_image = enhance_image(result_image, enhancement_options)
 
     if (face_blur_options.do_face_blur or face_blur_options.do_video_noise) and target_face is not None:

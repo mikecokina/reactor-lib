@@ -90,36 +90,36 @@ def _restore_face(
         enhancement_options: EnhancementOptions,
 ) -> Image.Image:
     result_image = image
-    if enhancement_options.face_restorer is not None:
-        original_image = result_image.copy()
-        # noinspection PyTypeChecker
-        numpy_image = np.array(result_image)
-        numpy_image = instance.restore(
-            numpy_image,
-            w=enhancement_options.codeformer_weight,
-            enhancement_options=enhancement_options
-        )
-        restored_image = Image.fromarray(numpy_image)
-        result_image = Image.blend(
-            original_image, restored_image, enhancement_options.restorer_visibility
-        )
+
+    original_image = result_image.copy()
+    # noinspection PyTypeChecker
+    numpy_image = np.array(result_image)
+    numpy_image = instance.restore(
+        numpy_image,
+        w=enhancement_options.codeformer_weight,
+        enhancement_options=enhancement_options
+    )
+    restored_image = Image.fromarray(numpy_image)
+    result_image = Image.blend(
+        original_image, restored_image, enhancement_options.codeformer_visibility
+    )
 
     return result_image
 
 
 def enhance_image(
-        image: Image,
-        enhancement_options: EnhancementOptions,
+        image: Image.Image,
+        face_enhancement_options: EnhancementOptions,
 ) -> Image.Image:
     if not code_former_cache.model:
         codeformer = FaceRestorerCodeFormer.setup_model(settings.FACE_RESTORATION_MODEL_DIR)
         code_former_cache.model = codeformer
 
-    logger.info(f"Restoring the face with CodeFormer (weight: {enhancement_options.codeformer_weight})")
+    logger.info(f"Restoring the face with CodeFormer (weight: {face_enhancement_options.codeformer_weight})")
     with suppress_output():
         result_image = _restore_face(
             image=image,
             instance=code_former_cache.model,
-            enhancement_options=enhancement_options,
+            enhancement_options=face_enhancement_options,
         )
     return result_image

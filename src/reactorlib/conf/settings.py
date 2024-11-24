@@ -13,19 +13,37 @@ class DetectionOptions:
 
 
 @dataclass
+class ImageEnhancementOptions:
+    do_enhancement: bool = True
+
+    scale: int = 2
+    tile: int = 400,
+    tile_pad: int = 10,
+    pre_pad: int = 0,
+    half: bool = False
+
+
+@dataclass
+class FaceEnhancementOptions:
+    do_enhancement: bool = True
+    enhance_target: bool = False
+    scale: int = 1
+    codeformer_visibility: float = 0.5
+    codeformer_weight: float = 0.5
+    restore_face_only: bool = False
+
+
+@dataclass
 class EnhancementOptions:
     do_enhancement: bool = True
-    do_restore_first: bool = True
-    enhance_target_first: bool = False
-    scale: int = 1
-    upscaler: None = None
-    upscale_visibility: float = 0.5
-    face_restorer: str = "CodeFormer"
-    restorer_visibility: float = 0.5
+    enhance_target: bool = False
+    codeformer_visibility: float = 0.5
     codeformer_weight: float = 0.5
-    upscale_force: bool = False
     restore_face_only: bool = False
+
+    face_enhancement_options: FaceEnhancementOptions = field(default_factory=FaceEnhancementOptions)
     detection_options: DetectionOptions = field(default_factory=DetectionOptions)
+    image_enhancement_options: ImageEnhancementOptions = field(default_factory=ImageEnhancementOptions)
 
 
 @dataclass
@@ -47,6 +65,12 @@ class _Const(object):
     FACE_RESTORATION_MODEL: str = "CodeFormer"
     FACE_RESTORATION_MODEL_URL = "https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth"
     FACE_RESTORATION_MODEL_DOWNLOAD_NAME = "codeformer-v0.1.0.pth"
+
+    IMAGE_RESTORATION_MODEL: str = "RealESRGAN"
+    "https://huggingface.co/ai-forever/Real-ESRGAN/resolve/main/RealESRGAN_x2.pth"
+    IMAGE_RESTORATION_MODEL_URL = "https://github.com/xinntao/Real-ESRGAN/" \
+                                  "releases/download/v0.2.1/RealESRGAN_x2plus.pth"
+    IMAGE_RESTORATION_MODEL_DOWNLOAD_NAME = "RealESRGAN_x2.pth"
 
     COLORS = [
         (255, 0, 0),
@@ -76,6 +100,7 @@ class DefaultSettings(object):
     )
     NO_HALF: bool = True
     FACE_RESTORATION_MODEL_DIR: str = os.path.join(MODELS_PATH, 'codeformer')
+    IMAGE_RESTORATION_MODEL_DIR: str = os.path.join(MODELS_PATH, 'realesrgan')
     PROVIDERS = ["CPUExecutionProvider"]
 
 
@@ -135,6 +160,7 @@ class Settings(_Const, DefaultSettings):
                     cls.PROVIDERS = ["CPUExecutionProvider"]
             if key == 'MODELS_PATH':
                 cls.FACE_RESTORATION_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'codeformer')
+                cls.IMAGE_RESTORATION_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'realesrgan')
 
     @property
     def device(self):

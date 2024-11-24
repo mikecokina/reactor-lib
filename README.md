@@ -33,11 +33,10 @@ def main():
 
     enhancement_options = EnhancementOptions(
         do_enhancement=True,
-        upscale_visibility=0.5,
-        restorer_visibility=1.0,
+        codeformer_visibility=1.0,
         codeformer_weight=0.5,
         restore_face_only=False,
-        enhance_target_first=False,
+        enhance_target=False,
         detection_options=DetectionOptions(
             det_thresh=0.25,
             det_maxnum=0
@@ -81,11 +80,10 @@ def main():
 
     enhancement_options = EnhancementOptions(
         do_enhancement=True,
-        upscale_visibility=0.5,
-        restorer_visibility=1.0,
+        codeformer_visibility=1.0,
         codeformer_weight=0.5,
         restore_face_only=False,
-        enhance_target_first=False,
+        enhance_target=False,
         detection_options=DetectionOptions(
             det_thresh=0.25,
             det_maxnum=0
@@ -114,8 +112,8 @@ def main():
         skip_if_exists=False,
         progressbar=False,
     )
-    
-    
+
+
 if __name__ == '__main__':
     main()
 ```
@@ -135,8 +133,7 @@ def main():
     image = PIL.Image.open("</path/to/image.ext>")
     enhancement_options = EnhancementOptions(
         do_enhancement=True,
-        upscale_visibility=0.5,
-        restorer_visibility=1.0,
+        codeformer_visibility=1.0,
         codeformer_weight=0.5,
         restore_face_only=True,  # this does the job
         detection_options=DetectionOptions(

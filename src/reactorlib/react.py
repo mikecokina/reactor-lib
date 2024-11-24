@@ -274,6 +274,7 @@ def operate(
 
     if (face_blur_options.do_face_blur or face_blur_options.do_video_noise) and target_face is not None:
         logger.info("Applying blur to final image")
+        # noinspection PyTypeChecker
         result_image = _apply_blur(
             image=np.array(result_image),
             target_img=target_img,
@@ -401,7 +402,7 @@ def _single(
     target_img = images.get_image(target_image)
     target_img_org = target_img.copy()
 
-    if enhancement_options.enhance_target_first:
+    if enhancement_options.enhance_target:
         logger.info('Fixing face in target image first')
         target_img = enhance_image(target_img, enhancement_options)
 

@@ -15,8 +15,7 @@ def process_images(input_dir, output_dir, codeformer_weight=0.95, allowed_extens
 
     # Define enhancement options
     enhancement_options = EnhancementOptions(
-        upscale_visibility=0.5,
-        restorer_visibility=1.0,
+        codeformer_visibility=1.0,
         codeformer_weight=codeformer_weight,
     )
 
@@ -28,7 +27,7 @@ def process_images(input_dir, output_dir, codeformer_weight=0.95, allowed_extens
                 input_image = Image.open(image_path)
 
                 # Enhance image
-                result_image = enhance_image(input_image, enhancement_options=enhancement_options)
+                result_image = enhance_image(input_image, enhancement_options)
 
                 # Save the processed image to the output directory with the same filename
                 output_path = output_dir / image_path.name

@@ -1,3 +1,4 @@
+# TODO: merge with realesrgan or get rid of it
 import os
 from abc import abstractmethod
 from typing import Union

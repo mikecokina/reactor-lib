@@ -17,9 +17,9 @@ class ImageEnhancementOptions:
     do_enhancement: bool = True
 
     scale: int = 2
-    tile: int = 400,
-    tile_pad: int = 10,
-    pre_pad: int = 0,
+    tile: int = 400
+    tile_pad: int = 10
+    pre_pad: int = 0
     half: bool = False
 
 

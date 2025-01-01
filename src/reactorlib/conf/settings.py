@@ -72,12 +72,12 @@ class FaceSwapperModels(object):
             url="https://github.com/facefusion/facefusion-assets/releases/download/models/inswapper_128.onnx"
         ),
         FaceSwapper.reswapper_128.value: FaceSwapperOptions(
-            filename="reswapper_128-1019500.pth",
-            url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_128-1019500.pth"
+            filename="reswapper_128-1019500-newarch.pth",
+            url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_128-1019500-newarch.pth"
         ),
         FaceSwapper.reswapper_256.value: FaceSwapperOptions(
-            filename="reswapper_256-1399500.pth",
-            url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_256-1399500.pth"
+            filename="reswapper_256-1399500-newarch.pth",
+            url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_256-1399500-newarch.pth"
         )
     }
 

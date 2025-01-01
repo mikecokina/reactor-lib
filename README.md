@@ -6,9 +6,13 @@
 
 # reactor-lib
 
-The face swap python library based on sd-webui-reactor extension 
-[setup.py](setup.py)
-*Credit goes to*: https://github.com/Gourieff/sd-webui-reactor
+The face swap python library based on sd-webui-reactor extension
+
+## Acknowledgement
+- *sd-webui-reactor*: https://github.com/Gourieff/sd-webui-reactor
+- *inswapper*: https://github.com/haofanwang/inswapper
+- *ReSwapper*: https://github.com/somanchiu/ReSwapper
+
 
 ## Install
 

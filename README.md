@@ -18,7 +18,10 @@ The face swap python library based on sd-webui-reactor extension
 ## Example for single image
 
 ```python
-from reactorlib import settings, swap, DetectionOptions, EnhancementOptions, FaceBlurOptions
+from reactorlib import (
+    settings, swap, DetectionOptions, EnhancementOptions, 
+    FaceBlurOptions, FaceEnhancementOptions, FaceSwapper
+)
 
 
 def main():
@@ -29,19 +32,24 @@ def main():
         # "NO_HALF": True,
         # "FACE_RESTORATION_MODEL_DIR": "/absolute/path/to/facerestoration/model/directory",
         # "PROVIDERS": ["CUDAExecutionProvider"],
+        "FACE_SWAPPER": FaceSwapper.inswapper,
     })
 
     enhancement_options = EnhancementOptions(
-        do_enhancement=True,
-        codeformer_visibility=1.0,
-        codeformer_weight=0.5,
-        restore_face_only=False,
-        enhance_target=False,
-        detection_options=DetectionOptions(
-            det_thresh=0.25,
-            det_maxnum=0
+        face_enhancement_options=FaceEnhancementOptions(
+            do_enhancement=True,
+            enhance_target=False,
+            codeformer_visibility=1.0,
+            codeformer_weight=0.5,
+            restore_face_only=False,
+            # Face enhancer detection options
+            detection_options=DetectionOptions(
+                det_thresh=0.25,
+                det_maxnum=0
+            )
         )
     )
+    # Face swapper detection options
     detection_options = DetectionOptions(det_thresh=0.65, det_maxnum=0)
     face_blur_options = FaceBlurOptions(
         do_face_blur=True,
@@ -70,7 +78,7 @@ if __name__ == "__main__":
 ## Example for batch processing from single source image
 
 ```python
-from reactorlib import settings, swap, DetectionOptions, EnhancementOptions, FaceBlurOptions
+from reactorlib import settings, swap, DetectionOptions, EnhancementOptions, FaceBlurOptions, FaceEnhancementOptions
 
 
 def main():
@@ -79,14 +87,17 @@ def main():
     })
 
     enhancement_options = EnhancementOptions(
-        do_enhancement=True,
-        codeformer_visibility=1.0,
-        codeformer_weight=0.5,
-        restore_face_only=False,
-        enhance_target=False,
-        detection_options=DetectionOptions(
-            det_thresh=0.25,
-            det_maxnum=0
+        face_enhancement_options=FaceEnhancementOptions(
+            do_enhancement=True,
+            enhance_target=False,
+            codeformer_visibility=1.0,
+            codeformer_weight=0.5,
+            restore_face_only=False,
+            # Face enhancer detection options
+            detection_options=DetectionOptions(
+                det_thresh=0.25,
+                det_maxnum=0
+            )
         )
     )
     detection_options = DetectionOptions(det_thresh=0.65, det_maxnum=0)
@@ -122,7 +133,7 @@ if __name__ == '__main__':
 
 ```python
 import PIL.Image
-from reactorlib import EnhancementOptions, DetectionOptions, enhance_image, settings
+from reactorlib import EnhancementOptions, DetectionOptions, enhance_image, settings, FaceEnhancementOptions
 
 
 def main():
@@ -132,14 +143,16 @@ def main():
 
     image = PIL.Image.open("</path/to/image.ext>")
     enhancement_options = EnhancementOptions(
-        do_enhancement=True,
-        codeformer_visibility=1.0,
-        codeformer_weight=0.5,
-        restore_face_only=True,  # this does the job
-        detection_options=DetectionOptions(
-            det_thresh=0.25,
-            det_maxnum=0
-        )  # this plays role in face mask detection
+        face_enhancement_options=FaceEnhancementOptions(
+            do_enhancement=True,
+            codeformer_visibility=1.0,
+            codeformer_weight=0.5,
+            restore_face_only=True,  # this does the job
+            detection_options=DetectionOptions(
+                det_thresh=0.25,
+                det_maxnum=0
+            )  # this plays role in face mask detection
+        )
     )
     result = enhance_image(image, enhancement_options)
 

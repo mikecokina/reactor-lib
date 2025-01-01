@@ -1,3 +1,4 @@
+import enum
 import json
 import os
 import os.path as op
@@ -31,18 +32,12 @@ class FaceEnhancementOptions:
     codeformer_visibility: float = 0.5
     codeformer_weight: float = 0.5
     restore_face_only: bool = False
+    detection_options: DetectionOptions = field(default_factory=DetectionOptions)
 
 
 @dataclass
 class EnhancementOptions:
-    do_enhancement: bool = True
-    enhance_target: bool = False
-    codeformer_visibility: float = 0.5
-    codeformer_weight: float = 0.5
-    restore_face_only: bool = False
-
     face_enhancement_options: FaceEnhancementOptions = field(default_factory=FaceEnhancementOptions)
-    detection_options: DetectionOptions = field(default_factory=DetectionOptions)
     image_enhancement_options: ImageEnhancementOptions = field(default_factory=ImageEnhancementOptions)
 
 
@@ -58,10 +53,48 @@ class FaceBlurOptions:
     mask_size: int = 0
 
 
+class FaceSwapper(enum.Enum):
+    inswapper = 'inswapper'
+    reswapper_128 = 'reswapper_128'
+    reswapper_256 = 'reswapper_256'
+
+
+@dataclass
+class FaceSwapperOptions:
+    filename: str
+    url: str
+
+
+class FaceSwapperModels(object):
+    _config = {
+        FaceSwapper.inswapper.value: FaceSwapperOptions(
+            filename="inswapper_128.onnx",
+            url="https://github.com/facefusion/facefusion-assets/releases/download/models/inswapper_128.onnx"
+        ),
+        FaceSwapper.reswapper_128.value: FaceSwapperOptions(
+            filename="reswapper_128-1019500.pth",
+            url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_128-1019500.pth"
+        ),
+        FaceSwapper.reswapper_256.value: FaceSwapperOptions(
+            filename="reswapper_256-1399500.pth",
+            url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_256-1399500.pth"
+        )
+    }
+
+    @classmethod
+    def get_config(cls, face_swapper: FaceSwapper) -> FaceSwapperOptions:
+        if face_swapper.value in cls._config:
+            return cls._config[face_swapper.value]
+        raise AttributeError(f"No such model {face_swapper.value}")
+
+
 class _Const(object):
-    FACE_SWAP_MODEL_DOWNLOAD_NAME: str = "inswapper_128.onnx"
-    FACE_SWAP_MODEL_URL: str = "https://github.com/facefusion/facefusion-assets/releases" \
-                               "/download/models/inswapper_128.onnx"
+    FACE_SWAPPER = FaceSwapper.inswapper
+    _default_model = FaceSwapperModels.get_config(FaceSwapper.inswapper)
+
+    FACE_SWAPPER_MODEL_DOWNLOAD_NAME: str = _default_model.filename
+    FACE_SWAPPER_MODEL_URL: str = _default_model.url
+
     FACE_RESTORATION_MODEL: str = "CodeFormer"
     FACE_RESTORATION_MODEL_URL = "https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth"
     FACE_RESTORATION_MODEL_DOWNLOAD_NAME = "codeformer-v0.1.0.pth"
@@ -109,6 +142,7 @@ class Settings(_Const, DefaultSettings):
 
     # defaults #########################################################################################################
     DEFAULT_SETTINGS = {}
+
     ####################################################################################################################
 
     def __new__(cls):
@@ -161,6 +195,14 @@ class Settings(_Const, DefaultSettings):
             if key == 'MODELS_PATH':
                 cls.FACE_RESTORATION_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'codeformer')
                 cls.IMAGE_RESTORATION_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'realesrgan')
+
+            if key == 'FACE_SWAPPER':
+                if not isinstance(value, FaceSwapper):
+                    raise ValueError("FACE_SWAPPER value have to be a value of FaceSwapper enum")
+                cls.FACE_SWAPPER = value
+                model_config: FaceSwapperOptions = FaceSwapperModels.get_config(value)
+                cls.FACE_SWAPPER_MODEL_DOWNLOAD_NAME = model_config.filename
+                cls.FACE_SWAPPER_MODEL_URL = model_config.url
 
     @property
     def device(self):

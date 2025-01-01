@@ -17,7 +17,7 @@ from . entities.face import FaceArea
 from . entities.rect import Rect
 from . logger import logger
 from . inferencers.bisenet_mask_generator import BiSeNetMaskGenerator
-
+from . conf.settings import EnhancementOptions
 
 def get_face_mask(
         image: np.ndarray,
@@ -41,6 +41,7 @@ def get_face_mask(
             mask_size=1,
             use_minimal_area=False
         )
+        # noinspection DuplicatedCode
         face_mask_arr = cv2.blur(face_mask_arr, (12, 12))
         larger_mask = cv2.resize(face_mask_arr, dsize=(face.width, face.height))
         entire_mask_image = np.zeros_like(np.array(image))
@@ -57,7 +58,7 @@ def restore_with_face_helper(
         np_image: np.ndarray,
         face_helper: FaceRestoreHelper,
         restore_face: Callable[[torch.Tensor], torch.Tensor],
-        enhancement_options
+        enhancement_options: EnhancementOptions
 ) -> np.ndarray:
 
     from torchvision.transforms.functional import normalize
@@ -91,8 +92,11 @@ def restore_with_face_helper(
             restored_face = (restored_face * 255.0).astype('uint8')
 
             # Face only if required
-            if enhancement_options.restore_face_only:
-                face_mask_arr = get_face_mask(cropped_face, detection_options=enhancement_options.detection_options)
+            if enhancement_options.face_enhancement_options.restore_face_only:
+                face_mask_arr = get_face_mask(
+                    image=cropped_face,
+                    detection_options=enhancement_options.face_enhancement_options.detection_options
+                )
                 # noinspection PyTypeChecker
                 restored_face = np.array(PIL.Image.composite(
                     PIL.Image.fromarray(restored_face),

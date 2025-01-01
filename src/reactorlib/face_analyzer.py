@@ -1,9 +1,10 @@
 import copy
 import os
-from typing import Union, Tuple
+from typing import Union, Tuple, Text
 
 import numpy as np
 from PIL import Image
+from insightface.app.common import Face
 
 from . import settings
 from .logger import suppress_output
@@ -134,87 +135,30 @@ def _half_det_size(det_size) -> Tuple[float, float]:
 
 def get_face_single(
         *,
-        img_data: np.ndarray,
-        face,
+        faces,
         face_index=0,
-        det_size=(640, 640),
-        gender_source=0,
-        gender_target=0,
-        det_thresh=0.5,
-        det_maxnum=0
-) -> Tuple:
+) -> Tuple[Union[Face | None], int, int, Text]:
     buffalo_path = os.path.join(settings.MODELS_PATH, "insightface/models/buffalo_l.zip")
     if os.path.exists(buffalo_path):
         os.remove(buffalo_path)
 
     face_age = "None"
     face_gender = "None"
-    gender_detected = "None"
 
     # noinspection PyBroadException
     try:
-        face_age = get_face_age(face, face_index)
-    except Exception:
+        face_age = get_face_age(faces, face_index)
+    except BaseException:
         logger.warning(f"Cannot detect any age for face index = {face_index}")
 
     # noinspection PyBroadException
     try:
-        face_gender = get_gender(face, face_index)
-        gender_detected = face_gender
+        face_gender = get_gender(faces, face_index)
         face_gender = "Female" if face_gender == "F" else ("Male" if face_gender == "M" else "None")
-    except Exception:
+    except BaseException:
         logger.warning(f"Cannot detect any Gender for Face index = %s", face_index)
 
-    if gender_source != 0:
-        if len(face) == 0 and det_size[0] > 320 and det_size[1] > 320:
-            det_size_half = _half_det_size(det_size)
-            face_ = analyze_faces(img_data, det_size_half, det_thresh, det_maxnum)
-            return get_face_single(
-                img_data=img_data,
-                face=face_,
-                face_index=face_index,
-                det_size=det_size_half,
-                gender_source=gender_source,
-                gender_target=gender_target,
-                det_thresh=det_thresh,
-                det_maxnum=det_maxnum
-            )
-        faces, wrong_gender = get_face_gender(face, face_index, gender_source, "Source", gender_detected)
-        return faces, wrong_gender, face_age, face_gender
-
-    if gender_target != 0:
-        if len(face) == 0 and det_size[0] > 320 and det_size[1] > 320:
-            det_size_half = _half_det_size(det_size)
-            face_ = analyze_faces(img_data, det_size_half, det_thresh, det_maxnum)
-            return get_face_single(
-                img_data=img_data,
-                face=face_,
-                face_index=face_index,
-                det_size=det_size_half,
-                gender_source=gender_source,
-                gender_target=gender_target,
-                det_thresh=det_thresh,
-                det_maxnum=det_maxnum
-            )
-
-        faces, wrong_gender = get_face_gender(face, face_index, gender_target, "Target", gender_detected)
-        return faces, wrong_gender, face_age, face_gender
-
-    if len(face) == 0 and det_size[0] > 320 and det_size[1] > 320:
-        det_size_half = _half_det_size(det_size)
-        face_ = analyze_faces(img_data, det_size_half, det_thresh, det_maxnum)
-        return get_face_single(
-            img_data=img_data,
-            face=face_,
-            face_index=face_index,
-            det_size=det_size_half,
-            gender_source=gender_source,
-            gender_target=gender_target,
-            det_thresh=det_thresh,
-            det_maxnum=det_maxnum
-        )
-
     try:
-        return sorted(face, key=lambda x: x.bbox[0])[face_index], 0, face_age, face_gender
+        return sorted(faces, key=lambda x: x.bbox[0])[face_index], 0, face_age, face_gender
     except IndexError:
         return None, 0, face_age, face_gender

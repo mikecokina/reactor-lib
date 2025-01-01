@@ -1,8 +1,10 @@
 import glob
 import os
 import re
-from typing import Iterable, List
+from typing import Iterable, List, Union, Tuple
 from pathlib import Path
+
+import numpy as np
 import torch
 
 from . import settings
@@ -65,3 +67,14 @@ def listdir(directory: str, filter_ext: List = None):
         pass
 
     return file_list
+
+
+def get_warp_affine_border_value(img: np.ndarray) -> Union[int, Tuple]:
+    if img.ndim == 3:  # Color image (e.g., RGB/BGR)
+        border_value = (0.0, 0.0, 0.0)
+    elif img.ndim == 4:  # RGBA image
+        border_value = (0.0, 0.0, 0.0, 0.0)
+    else:  # Grayscale or others
+        border_value = 0.0
+
+    return border_value

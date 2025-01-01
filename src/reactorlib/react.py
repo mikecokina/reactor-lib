@@ -1,3 +1,4 @@
+import abc
 import os.path
 import random
 from pathlib import Path
@@ -12,11 +13,11 @@ from insightface.app.common import Face
 
 from . import settings, images, face_analyzer
 from .codeformer.codeformer_model import enhance_image
-from .conf.settings import EnhancementOptions, DetectionOptions, FaceBlurOptions
+from .conf.settings import EnhancementOptions, DetectionOptions, FaceBlurOptions, FaceSwapper
 from .entities.face import FaceArea
 from .entities.rect import Rect
 from .inferencers.bisenet_mask_generator import BiSeNetMaskGenerator
-from .modloader import get_face_swap_model
+from .modloader import get_inswapper_model, get_reswapper_model
 from .shared import color_generator, listdir, torch_gc
 from .logger import logger
 
@@ -57,6 +58,7 @@ def pad_bbox(bbox: Union[Tuple, List], w: int, h: int, pad_percent: float):
     return int(padded_x1), int(padded_y1), int(padded_x2), int(padded_y2)
 
 
+# noinspection DuplicatedCode
 def _apply_blur(
     image: np.ndarray,
     target_img: np.ndarray,
@@ -99,8 +101,8 @@ def _apply_blur(
         # Step 1: Pixelate the image by resizing it down and back up
         small_size = (original_size[0] // face_blur_options.noise_pixel_size, original_size[1]
                       // face_blur_options.noise_pixel_size)
-        pixelated = image_.resize(small_size, Image.NEAREST)  # Resizing down using nearest neighbor (blocky effect)
-        pixelated = pixelated.resize(original_size, Image.NEAREST)  # Resize back to original size
+        pixelated = image_.resize(small_size, Image.Resampling.NEAREST)  # Resizing down using nearest neighbor (blocky effect)
+        pixelated = pixelated.resize(original_size, Image.Resampling.NEAREST)  # Resize back to original size
         # Step 2: Add random noise (grainy effect) on top of the pixelated image
         noisy_image = Image.new("RGB", original_size)
         for x in range(original_size[0]):
@@ -158,28 +160,85 @@ def _apply_face_mask(
     return np.array(result)
 
 
+class AbstracatFaceSwapper(metaclass=abc.ABCMeta):
+    def __init__(self, face_swapper: FaceSwapper):
+        self._face_swapper = face_swapper
+
+    @abc.abstractmethod
+    def operate(self):
+        pass
+
+
+class FaceSwapperCache(object):
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super(FaceSwapperCache, cls).__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if not hasattr(self, "_model"):
+            self._model = None  # Initialize instance attribute
+        if not hasattr(self, "_key"):
+            self._key = None
+
+    @property
+    def model(self):
+        """Getter for the model attribute"""
+        return self._model
+
+    @model.setter
+    def model(self, value):
+        self._model = value
+
+    @property
+    def key(self):
+        """Getter for the model attribute"""
+        return self._key
+
+    @key.setter
+    def key(self, value):
+        self._key = value
+
+
+face_swapper_cache = FaceSwapperCache()
+
+
+def get_face_swapper_cache() -> FaceSwapperCache:
+    if (face_swapper_cache.model is None) or (face_swapper_cache.key != settings.FACE_SWAPPER.value):
+        if settings.FACE_SWAPPER == FaceSwapper.inswapper:
+            face_swapper_cache.model = get_inswapper_model()
+        elif settings.FACE_SWAPPER == FaceSwapper.reswapper_128:
+            face_swapper_cache.model = get_reswapper_model()
+        elif settings.FACE_SWAPPER == FaceSwapper.reswapper_256:
+            face_swapper_cache.model = get_reswapper_model()
+        else:
+            raise NotImplementedError(f"{settings.FACE_SWAPPER} not implemented")
+        face_swapper_cache.key = settings.FACE_SWAPPER.value
+    return face_swapper_cache
+
+
+# noinspection DuplicatedCode
 def operate(
         *,
         source_img: np.ndarray,
         target_img: np.ndarray,
-        target_img_orig: np.ndarray,
         source_faces_index: List[int],
         target_faces_index: List[int],
         source_faces,
         target_faces,
         source_face,
-        gender_source,
-        gender_target,
         swapped,
         enhancement_options,
-        detection_options,
         face_mask_correction,
         entire_mask_image,
         face_blur_options,
         face_mask_correction_size: int
 ) -> Tuple[Image.Image, int]:
     result = target_img
-    face_swapper = get_face_swap_model()
+    face_swapper = get_face_swapper_cache().model
+
     wrong_gender = 0
     target_face = None
 
@@ -190,12 +249,8 @@ def operate(
             if source_face is not None and wrong_gender == 0:
                 logger.info(f"Analyzing target face, index = {str(face_num)}")
                 target_face, wrong_gender, target_age, target_gender = face_analyzer.get_face_single(
-                    img_data=target_img,
-                    face=target_faces,
+                    faces=target_faces,
                     face_index=face_num,
-                    gender_target=gender_target,
-                    det_thresh=detection_options.det_thresh,
-                    det_maxnum=detection_options.det_maxnum
                 )
                 if target_age != "None" or target_gender != "None":
                     logger.info(f"Analyzed target: -{target_age}- y.o. {target_gender}")
@@ -223,12 +278,8 @@ def operate(
 
             logger.info(f"Analyzing source face, index = {str(source_face_num)}")
             source_face, wrong_gender, source_age, source_gender = face_analyzer.get_face_single(
-                img_data=source_img,
-                face=source_faces,
+                faces=source_faces,
                 face_index=source_face_num,
-                gender_source=gender_source,
-                det_thresh=detection_options.det_thresh,
-                det_maxnum=detection_options.det_maxnum
             )
             if source_age != "None" or source_gender != "None":
                 logger.info(f"Analyzed source: -{source_age}- y.o. {source_gender}")
@@ -239,12 +290,8 @@ def operate(
 
             logger.info(f"Analyzing target face, index = {str(targe_face_num)}")
             target_face, wrong_gender, target_age, target_gender = face_analyzer.get_face_single(
-                img_data=target_img,
-                face=target_faces,
+                faces=target_faces,
                 face_index=targe_face_num,
-                gender_target=gender_target,
-                det_thresh=detection_options.det_thresh,
-                det_maxnum=detection_options.det_maxnum
             )
             if target_age != "None" or target_gender != "None":
                 logger.info(f"Analyzed target: -{target_age}- y.o. {target_gender}")
@@ -269,7 +316,7 @@ def operate(
 
     result_image = Image.fromarray(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
 
-    if enhancement_options.do_enhancement and swapped > 0:
+    if enhancement_options.face_enhancement_options.do_enhancement and swapped > 0:
         result_image = enhance_image(result_image, enhancement_options)
 
     if (face_blur_options.do_face_blur or face_blur_options.do_video_noise) and target_face is not None:
@@ -280,12 +327,12 @@ def operate(
             target_img=target_img,
             target_face=target_face,
             face_blur_options=face_blur_options
-
         )
 
     return result_image, swapped
 
 
+# noinspection DuplicatedCode
 def _bulk(
         source_image: Image.Image | str,
         input_directory: str,
@@ -306,12 +353,11 @@ def _bulk(
         else:
             raise ImportError()
     except ImportError:
+        # noinspection PyUnusedLocal
         def _tqdm(x, *args, **kwargs):
             return x
         tqdm = _tqdm
 
-    gender_source: int = 0
-    gender_target: int = 0
     swapped = 0
 
     if not os.path.isdir(input_directory):
@@ -340,12 +386,8 @@ def _bulk(
     if len(source_faces_index) == 1:
         logger.info(f"Analyzing source face, index = {str(source_faces_index[0])}")
         source_face, wrong_gender, source_age, source_gender = face_analyzer.get_face_single(
-            img_data=source_img,
-            face=source_faces,
+            faces=source_faces,
             face_index=source_faces_index[0],
-            gender_source=gender_source,
-            det_thresh=detection_options.det_thresh,
-            det_maxnum=detection_options.det_maxnum
         )
         if source_age != "None" or source_gender != "None":
             logger.info(f"Analyzed source: -{source_age}- y.o. {source_gender}")
@@ -383,6 +425,7 @@ def _bulk(
     return None, swapped
 
 
+# noinspection DuplicatedCode
 def _single(
         *,
         source_image: Image.Image | str,
@@ -402,7 +445,7 @@ def _single(
     target_img = images.get_image(target_image)
     target_img_org = target_img.copy()
 
-    if enhancement_options.enhance_target:
+    if enhancement_options.face_enhancement_options.enhance_target:
         logger.info('Fixing face in target image first')
         target_img = enhance_image(target_img, enhancement_options)
 
@@ -459,12 +502,8 @@ def _single(
         if len(source_faces_index) == 1 and source_face is None:
             logger.info(f"Analyzing source face, index = {str(source_faces_index[0])}")
             source_face, wrong_gender, source_age, source_gender = face_analyzer.get_face_single(
-                img_data=source_img,
-                face=source_faces,
+                faces=source_faces,
                 face_index=source_faces_index[0],
-                gender_source=gender_source,
-                det_thresh=detection_options.det_thresh,
-                det_maxnum=detection_options.det_maxnum
             )
             if source_age != "None" or source_gender != "None":
                 logger.info(f"Analyzed source: -{source_age}- y.o. {source_gender}")
@@ -472,17 +511,13 @@ def _single(
         result_image, swapped = operate(
             source_img=source_img,
             target_img=target_img,
-            target_img_orig=target_img_orig,
             source_faces_index=source_faces_index,
             target_faces_index=target_faces_index,
             source_faces=source_faces,
             source_face=source_face,
             target_faces=target_faces,
-            gender_source=gender_source,
-            gender_target=gender_target,
             swapped=swapped,
             enhancement_options=enhancement_options,
-            detection_options=detection_options,
             face_blur_options=face_blur_options,
             face_mask_correction=face_mask_correction,
             entire_mask_image=entire_mask_image,

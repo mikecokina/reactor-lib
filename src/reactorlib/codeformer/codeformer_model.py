@@ -66,7 +66,7 @@ class FaceRestorerCodeFormer(CommonFaceRestoration):
             enhancement_options=None
     ):
         if w is None:
-            w = EnhancementOptions.codeformer_weight
+            w = EnhancementOptions.face_enhancement_options.codeformer_weight
 
         def restore_face(cropped_face_t):
             assert self.net is not None
@@ -96,12 +96,12 @@ def _restore_face(
     numpy_image = np.array(result_image)
     numpy_image = instance.restore(
         numpy_image,
-        w=enhancement_options.codeformer_weight,
+        w=enhancement_options.face_enhancement_options.codeformer_weight,
         enhancement_options=enhancement_options
     )
     restored_image = Image.fromarray(numpy_image)
     result_image = Image.blend(
-        original_image, restored_image, enhancement_options.codeformer_visibility
+        original_image, restored_image, enhancement_options.face_enhancement_options.codeformer_visibility
     )
 
     return result_image
@@ -109,17 +109,18 @@ def _restore_face(
 
 def enhance_image(
         image: Image.Image,
-        face_enhancement_options: EnhancementOptions,
+        enhancement_options: EnhancementOptions,
 ) -> Image.Image:
     if not code_former_cache.model:
         codeformer = FaceRestorerCodeFormer.setup_model(settings.FACE_RESTORATION_MODEL_DIR)
         code_former_cache.model = codeformer
 
-    logger.info(f"Restoring the face with CodeFormer (weight: {face_enhancement_options.codeformer_weight})")
+    logger.info(f"Restoring the face with CodeFormer " +
+                "(weight: {enhancement_options.face_enhancement_options.codeformer_weight})")
     with suppress_output():
         result_image = _restore_face(
             image=image,
             instance=code_former_cache.model,
-            enhancement_options=face_enhancement_options,
+            enhancement_options=enhancement_options,
         )
     return result_image

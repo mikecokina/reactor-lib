@@ -3,9 +3,11 @@ import os
 import spandrel
 import torch
 import insightface
+from insightface.model_zoo.inswapper import INSwapper
 
 from . import settings
 from .logger import suppress_output
+from .reswapper.swapper import RESwapper
 from .shared import download_model
 from .logger import logger
 
@@ -37,12 +39,19 @@ def load_spandrel_model(
     return model_descriptor
 
 
-def get_face_swap_model():
-    model_path = os.path.join(settings.MODELS_PATH, settings.FACE_SWAP_MODEL_DOWNLOAD_NAME)
+def get_inswapper_model() -> INSwapper:
+    model_path = os.path.join(settings.MODELS_PATH, settings.FACE_SWAPPER_MODEL_DOWNLOAD_NAME)
     if not os.path.isfile(model_path):
-        download_model(model_path=model_path, model_url=settings.FACE_SWAP_MODEL_URL)
+        download_model(model_path=model_path, model_url=settings.FACE_SWAPPER_MODEL_URL)
     with suppress_output(prints_=True, logs_=False, warnings_=True):
         return insightface.model_zoo.get_model(model_path, providers=settings.PROVIDERS)
+
+
+def get_reswapper_model() -> RESwapper:
+    model_path = str(os.path.join(settings.MODELS_PATH, settings.FACE_SWAPPER_MODEL_DOWNLOAD_NAME))
+    if not os.path.isfile(model_path):
+        download_model(model_path=model_path, model_url=settings.FACE_SWAPPER_MODEL_URL)
+    return RESwapper(model_path=model_path, device=settings.DEVICE)
 
 
 def get_analysis_model(models_path: str):

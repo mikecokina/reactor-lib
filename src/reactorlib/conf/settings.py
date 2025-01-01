@@ -69,7 +69,7 @@ class FaceSwapperModels(object):
     _config = {
         FaceSwapper.inswapper.value: FaceSwapperOptions(
             filename="inswapper_128.onnx",
-            url="https://github.com/facefusion/facefusion-assets/releases/download/models/inswapper_128.onnx"
+            url="https://huggingface.co/mikestealth/inswapper/resolve/main/inswapper_128.onnx"
         ),
         FaceSwapper.reswapper_128.value: FaceSwapperOptions(
             filename="reswapper_128-1019500-newarch.pth",

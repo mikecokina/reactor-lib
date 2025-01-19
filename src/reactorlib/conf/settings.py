@@ -61,40 +61,70 @@ class FaceSwapper(enum.Enum):
     reswapper_256_1567500 = 'reswapper_256_1567500'
 
 
+class FaceMasker(enum.Enum):
+    bisenet = "bisenet"
+    birefnet = "birefnet"
+
+
 @dataclass
-class FaceSwapperOptions:
+class FaceMaskModelOption:
+    filename: str
+    url: str
+
+
+class FaceMaskModels(object):
+    _config = {
+        FaceMasker.birefnet.value: FaceMaskModelOption(
+            filename="birefnet-lapa-face-epoch_4.onnx",
+            url=""
+        ),
+    }
+
+    @classmethod
+    def get_config(cls, face_masker: FaceMasker) -> FaceMaskModelOption:
+        if face_masker == FaceMasker.bisenet:
+            raise NotImplementedError("Such combination is not allowed!")
+
+        if face_masker.value in cls._config:
+            return cls._config[face_masker.value]
+        raise AttributeError(f"No such model {face_masker.value}")
+
+
+@dataclass
+class FaceSwapperModelOptions:
     filename: str
     url: str
 
 
 class FaceSwapperModels(object):
     _config = {
-        FaceSwapper.inswapper.value: FaceSwapperOptions(
+        FaceSwapper.inswapper.value: FaceSwapperModelOptions(
             filename="inswapper_128.onnx",
             url="https://huggingface.co/mikestealth/inswapper/resolve/main/inswapper_128.onnx"
         ),
-        FaceSwapper.reswapper_128.value: FaceSwapperOptions(
+        FaceSwapper.reswapper_128.value: FaceSwapperModelOptions(
             filename="reswapper_128-1019500-newarch.pth",
             url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_128-1019500-newarch.pth"
         ),
-        FaceSwapper.reswapper_256.value: FaceSwapperOptions(
+        FaceSwapper.reswapper_256.value: FaceSwapperModelOptions(
             filename="reswapper_256-1399500-newarch.pth",
             url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_256-1399500-newarch.pth"
         ),
-        FaceSwapper.reswapper_256_1567500.value: FaceSwapperOptions(
+        FaceSwapper.reswapper_256_1567500.value: FaceSwapperModelOptions(
             filename="reswapper_256-1567500-newarch.pth",
             url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_256-1567500-newarch.pth"
         )
     }
 
     @classmethod
-    def get_config(cls, face_swapper: FaceSwapper) -> FaceSwapperOptions:
+    def get_config(cls, face_swapper: FaceSwapper) -> FaceSwapperModelOptions:
         if face_swapper.value in cls._config:
             return cls._config[face_swapper.value]
         raise AttributeError(f"No such model {face_swapper.value}")
 
 
 class _Const(object):
+    FACE_MASKER = FaceMasker.bisenet
     FACE_SWAPPER = FaceSwapper.inswapper
     _default_model = FaceSwapperModels.get_config(FaceSwapper.inswapper)
 
@@ -140,6 +170,8 @@ class DefaultSettings(object):
     NO_HALF: bool = True
     FACE_RESTORATION_MODEL_DIR: str = os.path.join(MODELS_PATH, 'codeformer')
     IMAGE_RESTORATION_MODEL_DIR: str = os.path.join(MODELS_PATH, 'realesrgan')
+    BIREFNET_MODEL_DIR: str = os.path.join(MODELS_PATH, "birefnet")
+
     PROVIDERS = ["CPUExecutionProvider"]
 
 
@@ -201,12 +233,13 @@ class Settings(_Const, DefaultSettings):
             if key == 'MODELS_PATH':
                 cls.FACE_RESTORATION_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'codeformer')
                 cls.IMAGE_RESTORATION_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'realesrgan')
+                cls.BIREFNET_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'birefnet')
 
             if key == 'FACE_SWAPPER':
                 if not isinstance(value, FaceSwapper):
                     raise ValueError("FACE_SWAPPER value have to be a value of FaceSwapper enum")
                 cls.FACE_SWAPPER = value
-                model_config: FaceSwapperOptions = FaceSwapperModels.get_config(value)
+                model_config: FaceSwapperModelOptions = FaceSwapperModels.get_config(value)
                 cls.FACE_SWAPPER_MODEL_DOWNLOAD_NAME = model_config.filename
                 cls.FACE_SWAPPER_MODEL_URL = model_config.url
 

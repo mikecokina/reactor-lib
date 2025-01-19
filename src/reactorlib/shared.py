@@ -11,6 +11,43 @@ from . import settings
 from .logger import logger
 
 
+class SharedModelKeyMixin:
+    """Mixin that provides _model and _key attributes and their properties."""
+
+    def __init__(self):
+        # Only initialize once per instance
+        if not hasattr(self, "_model"):
+            self._model = None
+        if not hasattr(self, "_key"):
+            self._key = None
+
+    @property
+    def model(self):
+        return self._model
+
+    @model.setter
+    def model(self, value):
+        self._model = value
+
+    @property
+    def key(self):
+        return self._key
+
+    @key.setter
+    def key(self, value):
+        self._key = value
+
+
+class SingletonBase:
+    _instances = {}
+
+    def __new__(cls, *args, **kwargs):
+        # Make sure each subclass has exactly one _instance
+        if cls not in cls._instances:
+            cls._instances[cls] = super(SingletonBase, cls).__new__(cls)
+        return cls._instances[cls]
+
+
 def get_cuda_device_string():
     if settings.DEVICE_ID is not None:
         return f"cuda:{settings.DEVICE_ID}"

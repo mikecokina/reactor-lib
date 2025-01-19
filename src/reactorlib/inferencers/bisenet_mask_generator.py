@@ -1,5 +1,5 @@
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Text
 
 import cv2
 import numpy as np
@@ -22,12 +22,12 @@ class BiSeNetMaskGenerator(MaskGenerator):
     def name(self):
         return "BiSeNet"
 
-    # noinspection PyMethodOverriding
+    # noinspection PyMethodOverriding,DuplicatedCode
     def generate_mask(
             self,
             face_image: np.ndarray,
             face_area_on_image: Tuple[int, int, int, int],
-            affected_areas: List[str],
+            affected_areas: List[Text],
             mask_size: int,
             use_minimal_area: bool,
             fallback_ratio: float = 0.25,
@@ -41,7 +41,6 @@ class BiSeNetMaskGenerator(MaskGenerator):
             face_image = MaskGenerator.mask_non_face_areas(face_image, face_area_on_image)
 
         h, w, _ = face_image.shape
-
         if w != 512 or h != 512:
             rw = (int(w * (512 / w)) // 8) * 8
             rh = (int(h * (512 / h)) // 8) * 8

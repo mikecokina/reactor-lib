@@ -12,11 +12,12 @@ import torch
 
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
 
+from .inferencers.maskers import get_masker_cache
+from . logger import logger
 from . import shared, settings, images, face_analyzer
 from . entities.face import FaceArea
 from . entities.rect import Rect
-from . logger import logger
-from . inferencers.bisenet_mask_generator import BiSeNetMaskGenerator
+
 from . conf.settings import EnhancementOptions
 
 
@@ -31,10 +32,11 @@ def get_face_mask(
             det_maxnum=detection_options.det_maxnum
         )[0]
 
-        mask_generator = BiSeNetMaskGenerator()
+        mask_generator = get_masker_cache().model
         face = FaceArea(image, Rect.from_ndarray(np.array(analyzed_face.bbox)), 1.6, 512, "")
         face_image = np.array(face.image)
         face_area_on_image = face.face_area_on_image
+
         face_mask_arr = mask_generator.generate_mask(
             face_image,
             face_area_on_image=face_area_on_image,

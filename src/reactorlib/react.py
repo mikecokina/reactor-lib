@@ -15,7 +15,7 @@ from .codeformer.codeformer_model import enhance_image
 from .conf.settings import EnhancementOptions, DetectionOptions, FaceBlurOptions, FaceSwapper
 from .entities.face import FaceArea
 from .entities.rect import Rect
-from .inferencers.bisenet_mask_generator import BiSeNetMaskGenerator
+from .inferencers.maskers import get_masker_cache
 from .modloader import get_inswapper_model, get_reswapper_model
 from .shared import color_generator, listdir, torch_gc
 from .logger import logger
@@ -66,7 +66,7 @@ def _apply_blur(
 ) -> Image.Image:
     random.seed(face_blur_options.seed)
 
-    mask_generator = BiSeNetMaskGenerator()
+    mask_generator = get_masker_cache().model
     face = FaceArea(target_img, Rect.from_ndarray(np.array(target_face.bbox)), 1.6, 512, "")
     face_image = np.array(face.image)
     _process_face_image(face)
@@ -100,7 +100,8 @@ def _apply_blur(
         # Step 1: Pixelate the image by resizing it down and back up
         small_size = (original_size[0] // face_blur_options.noise_pixel_size, original_size[1]
                       // face_blur_options.noise_pixel_size)
-        pixelated = image_.resize(small_size, Image.Resampling.NEAREST)  # Resizing down using nearest neighbor (blocky effect)
+        # Resizing down using nearest neighbor (blocky effect)
+        pixelated = image_.resize(small_size, Image.Resampling.NEAREST)
         pixelated = pixelated.resize(original_size, Image.Resampling.NEAREST)  # Resize back to original size
         # Step 2: Add random noise (grainy effect) on top of the pixelated image
         noisy_image = Image.new("RGB", original_size)
@@ -133,8 +134,8 @@ def _apply_face_mask(
 ) -> np.ndarray:
     logger.info("Correcting face mask")
 
-    # TODO: use rmbg2.0 as mask generator
-    mask_generator = BiSeNetMaskGenerator()
+    mask_generator = get_masker_cache().model
+
     face = FaceArea(target_image, Rect.from_ndarray(np.array(target_face.bbox)), 1.6, 512, "")
     face_image = np.array(face.image)
     _process_face_image(face)

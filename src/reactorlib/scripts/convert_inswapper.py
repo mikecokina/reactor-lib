@@ -3,20 +3,19 @@ from reactorlib.reswapper.stf_128 import StyleTransferModel
 
 import onnx
 from onnx import numpy_helper
-onnx_model   = onnx.load("inswapper_128.onnx")
-INTIALIZERS  = onnx_model.graph.initializer
+
+onnx_model = onnx.load("inswapper_128.onnx")
+INTIALIZERS = onnx_model.graph.initializer
 onnx_weights = {}
 
 for initializer in INTIALIZERS:
     W = numpy_helper.to_array(initializer)
     onnx_weights[initializer.name] = W
 
-
 model = StyleTransferModel()
 weight_shapes = []
 for n, p in model.named_parameters():
     weight_shapes.append((n, '-'.join([str(x) for x in list(p.shape)])))
-
 
 replacement_dict = {
     'styles': 'style_blocks',
@@ -61,7 +60,6 @@ for k, v in onnx_weights.items():
 
     if k != orig_k:
         renamed_weights[k] = v
-
 
 state_dict = {k: torch.from_numpy(v) for k, v in renamed_weights.items()}
 model.load_state_dict(state_dict)

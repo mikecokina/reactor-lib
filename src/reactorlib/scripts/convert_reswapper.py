@@ -41,8 +41,6 @@ for k, v in transfer_weights.items():
     if k != orig_k:
         renamed_weights[k] = v
 
-
-
 state_dict = {k: torch.tensor(v) for k, v in renamed_weights.items()}
 model.load_state_dict(state_dict)
 

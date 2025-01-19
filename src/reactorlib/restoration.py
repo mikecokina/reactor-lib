@@ -19,6 +19,7 @@ from . logger import logger
 from . inferencers.bisenet_mask_generator import BiSeNetMaskGenerator
 from . conf.settings import EnhancementOptions
 
+
 def get_face_mask(
         image: np.ndarray,
         detection_options,
@@ -38,7 +39,7 @@ def get_face_mask(
             face_image,
             face_area_on_image=face_area_on_image,
             affected_areas=["Face"],
-            mask_size=1,
+            mask_size=detection_options.mask_size,
             use_minimal_area=False
         )
         # noinspection DuplicatedCode

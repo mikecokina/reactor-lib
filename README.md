@@ -19,6 +19,9 @@ The face swap python library based on sd-webui-reactor extension
 `pip install git+https://github.com/mikecokina/reactor-lib.git@master`
 
 
+### onnxruntime for CUDA 12.X
+pip install --pre --index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ORT-Nightly/pypi/simple/ onnxruntime-gpu
+
 ## Example for single image
 
 ```python

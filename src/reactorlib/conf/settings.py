@@ -58,6 +58,7 @@ class FaceSwapper(enum.Enum):
     inswapper = 'inswapper'
     reswapper_128 = 'reswapper_128'
     reswapper_256 = 'reswapper_256'
+    reswapper_256_1567500 = 'reswapper_256_1567500'
 
 
 @dataclass
@@ -79,6 +80,10 @@ class FaceSwapperModels(object):
         FaceSwapper.reswapper_256.value: FaceSwapperOptions(
             filename="reswapper_256-1399500-newarch.pth",
             url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_256-1399500-newarch.pth"
+        ),
+        FaceSwapper.reswapper_256_1567500.value: FaceSwapperOptions(
+            filename="reswapper_256-1567500-newarch.pth",
+            url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_256-1567500-newarch.pth"
         )
     }
 

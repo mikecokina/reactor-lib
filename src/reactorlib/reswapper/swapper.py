@@ -19,7 +19,10 @@ class RESwapper(object):
 
         if settings.FACE_SWAPPER == FaceSwapper.reswapper_128:
             self._input_size = (128, 128)
-        elif settings.FACE_SWAPPER == FaceSwapper.reswapper_256:
+        elif settings.FACE_SWAPPER in [
+            FaceSwapper.reswapper_256,
+            FaceSwapper.reswapper_256_1567500
+        ]:
             self._input_size = (256, 256)
         else:
             raise ValueError("Invalid value for setting.FACE_SWAPPER")

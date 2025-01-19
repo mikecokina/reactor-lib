@@ -1,4 +1,3 @@
-import abc
 import os.path
 import random
 from pathlib import Path
@@ -160,15 +159,6 @@ def _apply_face_mask(
     return np.array(result)
 
 
-class AbstracatFaceSwapper(metaclass=abc.ABCMeta):
-    def __init__(self, face_swapper: FaceSwapper):
-        self._face_swapper = face_swapper
-
-    @abc.abstractmethod
-    def operate(self):
-        pass
-
-
 class FaceSwapperCache(object):
     _instance = None
 
@@ -209,9 +199,11 @@ def get_face_swapper_cache() -> FaceSwapperCache:
     if (face_swapper_cache.model is None) or (face_swapper_cache.key != settings.FACE_SWAPPER.value):
         if settings.FACE_SWAPPER == FaceSwapper.inswapper:
             face_swapper_cache.model = get_inswapper_model()
-        elif settings.FACE_SWAPPER == FaceSwapper.reswapper_128:
-            face_swapper_cache.model = get_reswapper_model()
-        elif settings.FACE_SWAPPER == FaceSwapper.reswapper_256:
+        elif settings.FACE_SWAPPER in [
+            FaceSwapper.reswapper_128,
+            FaceSwapper.reswapper_256,
+            FaceSwapper.reswapper_256_1567500
+        ]:
             face_swapper_cache.model = get_reswapper_model()
         else:
             raise NotImplementedError(f"{settings.FACE_SWAPPER} not implemented")

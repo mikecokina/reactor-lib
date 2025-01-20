@@ -75,8 +75,8 @@ class FaceMaskModelOption:
 class FaceMaskModels(object):
     _config = {
         FaceMasker.birefnet.value: FaceMaskModelOption(
-            filename="birefnet-lapa-face-epoch_4.onnx",
-            url=""
+            filename="birefnet-lapa-face-epoch_20.onnx",
+            url="https://huggingface.co/mikestealth/birefnet/resolve/main/birefnet-lapa-face-epoch_20.onnx"
         ),
     }
 

@@ -75,18 +75,25 @@ class FaceMaskModelOption:
 class FaceMaskModels(object):
     _config = {
         FaceMasker.birefnet.value: FaceMaskModelOption(
-            filename="birefnet-lapa-face-epoch_20.onnx",
-            url="https://huggingface.co/mikestealth/birefnet/resolve/main/birefnet-lapa-face-epoch_20.onnx"
+            filename="birefnet-lapa-face-epoch_20--swin-v1-large.onnx",
+            url="https://huggingface.co/mikestealth/birefnet/resolve/main/"
+                "birefnet-lapa-face-epoch_20--swin-v1-large.onnx"
         ),
+        f"{FaceMasker.birefnet.value}_HALF": FaceMaskModelOption(
+            filename="birefnet-lapa-face-epoch_20--swin-v1-large_fp16.onnx",
+            url="https://huggingface.co/mikestealth/birefnet/resolve/main/"
+                "birefnet-lapa-face-epoch_20--swin-v1-large_fp16.onnx"
+        )
     }
 
     @classmethod
-    def get_config(cls, face_masker: FaceMasker) -> FaceMaskModelOption:
+    def get_config(cls, face_masker: FaceMasker, no_half: bool = True) -> FaceMaskModelOption:
         if face_masker == FaceMasker.bisenet:
             raise NotImplementedError("Such combination is not allowed!")
 
         if face_masker.value in cls._config:
-            return cls._config[face_masker.value]
+            key = face_masker.value if no_half else f"{face_masker.value}_HALF"
+            return cls._config[key]
         raise AttributeError(f"No such model {face_masker.value}")
 
 

@@ -17,7 +17,7 @@ class BiRefNetMaskGenerator(object):
     def __init__(self) -> None:
         self._image_size = 512
 
-        face_masker_options = FaceMaskModels.get_config(FaceMasker.birefnet)
+        face_masker_options = FaceMaskModels.get_config(FaceMasker.birefnet, no_half=settings.NO_HALF)
         self.model_path = os.path.join(settings.BIREFNET_MODEL_DIR, face_masker_options.filename)
 
         if not os.path.exists(self.model_path):
@@ -87,7 +87,8 @@ class BiRefNetMaskGenerator(object):
         ])
 
         input_image = transform_image(image).unsqueeze(0)
-        input_image_numpy = np.array(input_image, dtype=np.float32)
+        dtype = np.float32 if settings.NO_HALF else np.float16
+        input_image_numpy = np.array(input_image, dtype=dtype)
 
         input_name = self.mask_model.get_inputs()[0].name
         onnx_output = self.mask_model.run(

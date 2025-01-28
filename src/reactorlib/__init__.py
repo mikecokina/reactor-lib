@@ -13,5 +13,6 @@ from .conf.settings import (
     FaceBlurOptions,
     ImageEnhancementOptions,
     FaceEnhancementOptions,
-    FaceSwapper
+    FaceSwapper,
+    FaceMasker
 )

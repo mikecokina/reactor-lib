@@ -27,19 +27,16 @@ pip install --pre --index-url https://aiinfra.pkgs.visualstudio.com/PublicPackag
 ```python
 from reactorlib import (
     settings, swap, DetectionOptions, EnhancementOptions, 
-    FaceBlurOptions, FaceEnhancementOptions, FaceSwapper
+    FaceBlurOptions, FaceEnhancementOptions, FaceSwapper, FaceMasker
 )
 
 
 def main():
     settings.configure(**{
         'DEVICE': 'CUDA',
-        # "DEVICE_ID": 0,
         # "MODELS_PATH": "/absolute/path/to/models/directory",
-        # "NO_HALF": True,
-        # "FACE_RESTORATION_MODEL_DIR": "/absolute/path/to/facerestoration/model/directory",
-        # "PROVIDERS": ["CUDAExecutionProvider"],
-        "FACE_SWAPPER": FaceSwapper.inswapper,
+        "FACE_SWAPPER": FaceSwapper.reswapper_256_1567500,
+        "FACE_MASKER": FaceMasker.birefnet
     })
 
     enhancement_options = EnhancementOptions(
@@ -59,11 +56,11 @@ def main():
     # Face swapper detection options
     detection_options = DetectionOptions(det_thresh=0.65, det_maxnum=0)
     face_blur_options = FaceBlurOptions(
-        do_face_blur=True,
-        do_video_noise=True,
+        do_face_blur=False,
+        do_video_noise=False,
         blur_radius=2,
         blur_strength=0.2,
-        noise_pixel_size=2
+        noise_pixel_size=1
     )
 
     result_image, n_swapped = swap(
@@ -100,7 +97,7 @@ def main():
             codeformer_visibility=1.0,
             codeformer_weight=0.5,
             restore_face_only=False,
-            # Face enhancer detection options
+            # Face enhancer detection options for face masking 
             detection_options=DetectionOptions(
                 det_thresh=0.25,
                 det_maxnum=0
@@ -109,12 +106,13 @@ def main():
     )
     detection_options = DetectionOptions(det_thresh=0.65, det_maxnum=0)
     face_blur_options = FaceBlurOptions(
-        do_face_blur=True,
-        do_video_noise=True,
+        do_face_blur=False,
+        do_video_noise=False,
         blur_radius=2,
         blur_strength=0.2,
-        noise_pixel_size=2
+        noise_pixel_size=1
     )
+
 
     _, n_swapped = swap(
         source_image="/absolute/path/to/source/image.<ext>",

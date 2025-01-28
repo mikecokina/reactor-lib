@@ -77,6 +77,8 @@ setup(
         'spandrel==0.2.2',
         'torch>=2.1.0,<=2.3.1',
         'torchvision>=0.16.0,<=0.18.1',
+        'nudenet==3.4.2',
+        'setuptools~=75.6.0',
     ],
 
     # List additional groups of dependencies here (e.g. development

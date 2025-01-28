@@ -13,3 +13,4 @@ scikit-image>=0.25.0
 tqdm>=4.67.1
 requests>=2.32.3
 setuptools~=75.6.0
+nudenet==3.4.2

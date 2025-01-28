@@ -131,6 +131,7 @@ class FaceSwapperModels(object):
 
 
 class _Const(object):
+    DISABLE_NSFW = True
     FACE_MASKER = FaceMasker.bisenet
     FACE_SWAPPER = FaceSwapper.inswapper
     _default_model = FaceSwapperModels.get_config(FaceSwapper.inswapper)

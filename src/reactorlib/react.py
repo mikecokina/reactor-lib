@@ -17,6 +17,7 @@ from .entities.face import FaceArea
 from .entities.rect import Rect
 from .inferencers.maskers import get_masker_cache
 from .modloader import get_inswapper_model, get_reswapper_model
+from .nudity import is_nsfw
 from .shared import color_generator, listdir, torch_gc
 from .logger import logger
 
@@ -234,6 +235,12 @@ def operate(
 
     wrong_gender = 0
     target_face = None
+
+    # NSFW test
+    nsfw_detected = is_nsfw(target_img)
+    if nsfw_detected:
+        # Return black image if NSFW content detected.
+        return Image.fromarray(target_img.copy() * 0), 0
 
     # Single source and several targets
     if len(source_faces_index) == 1:

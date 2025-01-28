@@ -31,6 +31,12 @@ pip install --pre --index-url https://aiinfra.pkgs.visualstudio.com/PublicPackag
 
 ## Example for single image
 
+### User Interface
+
+"A simple image-to-image swap interface is provided in the file `ui/img2img.py`. Run it as a Python script. First, install gradio==5.13.1."
+
+### Code
+
 ```python
 from reactorlib import (
     settings, swap, DetectionOptions, EnhancementOptions, 

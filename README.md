@@ -1,5 +1,5 @@
 [![GitHub version](https://img.shields.io/badge/version-0.1.dev0-yellow.svg)](https://github.com/mikecokina/reactor-lib)
-[![Licence GPLv2](https://img.shields.io/badge/license-GNU/GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
+[![Licence GPLv3](https://img.shields.io/badge/license-GNU/GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0.html)
 [![Python version](https://img.shields.io/badge/python-3.10|3.11-orange.svg)](https://www.python.org/doc/versions/)
 [![OS](https://img.shields.io/badge/os-Linux-magenta.svg)](https://www.gnu.org/gnu/linux-and-gnu.html)
 
@@ -8,10 +8,17 @@
 
 The face swap python library based on sd-webui-reactor extension
 
+# Licence
+
+- All repo code is published under GPLv3 Licence
+- When using `FaceSwapper.inswapper` setting, please follow these  [licence conditions](https://github.com/deepinsight/insightface?tab=readme-ov-file#license).
+- If you are using any ReSwapper models, please follow these [licence conditions](https://github.com/somanchiu/ReSwapper)
+
 ## Acknowledgement
 - *sd-webui-reactor*: https://github.com/Gourieff/sd-webui-reactor
 - *inswapper*: https://github.com/haofanwang/inswapper
 - *ReSwapper*: https://github.com/somanchiu/ReSwapper
+- *BiRefNet*: https://github.com/ZhengPeng7/BiRefNet
 
 
 ## Install
@@ -134,7 +141,7 @@ if __name__ == '__main__':
     main()
 ```
     
-## Example for CodeFormer (solves issues with hair)
+## Example for CodeFormer (solves issues with hair - enhances face only if needed!)
 
 ```python
 import PIL.Image

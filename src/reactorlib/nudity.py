@@ -43,7 +43,7 @@ class NSFWDetectedError(Exception):
     pass
 
 
-def is_nsfw(image: np.ndarray, threshold: float = 0.6) -> bool:
+def is_nsfw(image: np.ndarray, threshold: float = 0.8) -> bool:
     if not settings.DISABLE_NSFW:
         return False
 

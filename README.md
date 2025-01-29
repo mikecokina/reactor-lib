@@ -39,7 +39,7 @@ pip install --pre --index-url https://aiinfra.pkgs.visualstudio.com/PublicPackag
 
 ```python
 from reactorlib import (
-    settings, swap, DetectionOptions, EnhancementOptions, 
+    settings, swap, DetectionOptions, EnhancementOptions,
     FaceBlurOptions, FaceEnhancementOptions, FaceSwapper, FaceMasker
 )
 
@@ -49,7 +49,7 @@ def main():
         'DEVICE': 'CUDA',
         # "MODELS_PATH": "/absolute/path/to/models/directory",
         "FACE_SWAPPER": FaceSwapper.reswapper_256_1567500,
-        "FACE_MASKER": FaceMasker.birefnet
+        "FACE_MASKER": FaceMasker.birefnet_L
     })
 
     enhancement_options = EnhancementOptions(

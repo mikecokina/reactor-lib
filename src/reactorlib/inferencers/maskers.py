@@ -16,7 +16,7 @@ masker_cache = MaskerCache()
 
 def get_masker_cache() -> MaskerCache:
     if (masker_cache.model is None) or (masker_cache.key != settings.FACE_MASKER.value):
-        if settings.FACE_MASKER == FaceMasker.birefnet:
+        if settings.FACE_MASKER in [FaceMasker.birefnet_L, FaceMasker.birefnet_T]:
             masker_cache.model = BiRefNetMaskGenerator()
         elif settings.FACE_MASKER == FaceMasker.bisenet:
             masker_cache.model = BiSeNetMaskGenerator()

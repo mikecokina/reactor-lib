@@ -107,7 +107,8 @@ def main():
                 label="Face Masker",
                 choices=[
                     FaceMasker.bisenet.value,
-                    FaceMasker.birefnet.value
+                    FaceMasker.birefnet_L.value,
+                    FaceMasker.birefnet_T.value
                 ])
 
             device_option = gr.Dropdown(

@@ -8,7 +8,7 @@
 
 The face swap python library based on sd-webui-reactor extension
 
-# Licence
+## Licence
 
 - All repo code is published under GPLv3 Licence
 - When using `FaceSwapper.inswapper` setting, please follow these  [licence conditions](https://github.com/deepinsight/insightface?tab=readme-ov-file#license).
@@ -180,3 +180,28 @@ if __name__ == '__main__':
 ```
 
 Models are downloaded automatically. Approximately 1.5 GB of free space is required.
+
+
+# Disclaimer
+This software is provided for ethical and lawful use only. It is intended primarily for creative, educational, and entertainment purposes, such as animation, artistic projects, or authorized media production.
+
+- No Endorsement of Misuse
+
+I as developer do not endorse or support the use of this software for unethical or illegal activities, including but not limited to creating deceptive content, infringing on personal privacy, or disseminating false or harmful information.
+
+- Respect for Rights and Consent
+
+Please ensure you have obtained all necessary consents from individuals appearing in any content you create or modify using this software. Unauthorized use of someone’s likeness may infringe on personal rights and violate local laws or regulations.
+
+- Compliance with Local Laws
+
+Users of this software assume full responsibility for understanding and complying with all applicable laws and regulations in their jurisdiction. Any misuse of the software is solely the responsibility of the user.
+
+- No Liability
+
+The developer(s) will not be held liable for any damages, claims, or legal actions arising from the misuse of this software. By using this software, you agree to indemnify and hold harmless the developer(s) from any resulting liability.
+
+- Educational and Demonstration Purposes
+
+This software, including its source code and any related documentation, is provided for demonstration, research, and educational purposes. It is not intended to enable malicious activities or to violate anyone’s rights.
+By using or modifying this software, you acknowledge that you have read and understood this disclaimer and agree to use the software in a manner that respects the rights, privacy, and dignity of others.

@@ -21,7 +21,7 @@ from .entities.rect import Rect
 from .inferencers.maskers import get_masker_cache
 from .modloader import get_inswapper_model, get_reswapper_model
 from .nudity import is_nsfw
-from .shared import color_generator, listdir, torch_gc
+from .shared import color_generator, listdir, torch_gc, get_tqdm_cls
 from .logger import logger
 from .video.utils import video2frames, frames2video
 
@@ -232,7 +232,8 @@ def operate(
         face_mask_correction,
         entire_mask_image,
         face_blur_options,
-        face_mask_correction_size: int
+        face_mask_correction_size: int,
+        reverse_detection_order: bool
 ) -> Tuple[Image.Image, int]:
     result = target_img
     face_swapper = get_face_swapper_cache().model
@@ -255,6 +256,7 @@ def operate(
                 target_face, wrong_gender, target_age, target_gender = face_analyzer.get_face_single(
                     faces=target_faces,
                     face_index=face_num,
+                    reverse_detection_order=reverse_detection_order
                 )
                 if target_age != "None" or target_gender != "None":
                     logger.info(f"Analyzed target: -{target_age}- y.o. {target_gender}")
@@ -296,6 +298,7 @@ def operate(
             target_face, wrong_gender, target_age, target_gender = face_analyzer.get_face_single(
                 faces=target_faces,
                 face_index=targe_face_num,
+                reverse_detection_order=reverse_detection_order
             )
             if target_age != "None" or target_gender != "None":
                 logger.info(f"Analyzed target: -{target_age}- y.o. {target_gender}")
@@ -349,18 +352,11 @@ def _bulk(
         face_mask_correction: bool,
         face_mask_correction_size: int,
         skip_if_exists: bool,
-        progressbar: bool
+        progressbar: bool,
+        **kwargs
 ) -> Tuple[None, int]:
-    try:
-        if progressbar:
-            from tqdm import tqdm
-        else:
-            raise ImportError()
-    except ImportError:
-        # noinspection PyUnusedLocal
-        def _tqdm(x, *args, **kwargs):
-            return x
-        tqdm = _tqdm
+    tqdm = get_tqdm_cls(progressbar=progressbar)
+    tqdm = kwargs.get("gr_progressbar", tqdm)
 
     swapped = 0
 
@@ -525,7 +521,8 @@ def _single(
             face_blur_options=face_blur_options,
             face_mask_correction=face_mask_correction,
             entire_mask_image=entire_mask_image,
-            face_mask_correction_size=face_mask_correction_size
+            face_mask_correction_size=face_mask_correction_size,
+            reverse_detection_order=detection_options.reverse_detection_order
         )
     else:
         raise NotImplementedError("Any other option is not implemented yet, requires source image")

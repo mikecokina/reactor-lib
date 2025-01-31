@@ -5,20 +5,7 @@ from typing import Union, Tuple
 
 import cv2
 
-from ..shared import DummyTqdm, listdir
-
-
-def get_tqdm(progressbar: bool = True):
-    # Try importing tqdm only if progress bar is enabled
-    try:
-        if progressbar:
-            from tqdm import tqdm
-        else:
-            raise ImportError()
-    except ImportError:
-        tqdm = DummyTqdm  # Use mock progress bar
-
-    return tqdm
+from ..shared import listdir, GradioTqdmWrapper, get_tqdm_cls
 
 
 def video2frames(
@@ -27,8 +14,13 @@ def video2frames(
         high_quality: bool = True,
         progressbar: bool = True,
         desired_fps: float = None,
+        **kwargs
+
 ) -> Tuple[int, float]:
-    tqdm = get_tqdm(progressbar=progressbar)
+    tqdm = get_tqdm_cls(progressbar=progressbar)
+    if kwargs.get("gr_progressbar"):
+        tqdm = GradioTqdmWrapper(kwargs.get("gr_progressbar"))
+
     cap = cv2.VideoCapture(video_path)
 
     if not cap.isOpened():
@@ -98,8 +90,12 @@ def frames2video(
         input_directory: Union[Path, str],
         fps: Union[float, int],
         progressbar: bool = True,
+        **kwargs
 ):
-    tqdm = get_tqdm(progressbar=progressbar)
+    tqdm = get_tqdm_cls(progressbar=progressbar)
+    if kwargs.get("gr_progressbar"):
+        tqdm = GradioTqdmWrapper(kwargs.get("gr_progressbar"))
+
     frame_files = listdir(input_directory)
 
     if not frame_files:

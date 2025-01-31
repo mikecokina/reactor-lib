@@ -20,6 +20,37 @@ class DummyTqdm:
     def update(self, *args, **kwargs):
         pass
 
+    def __call__(self, *args, **kwargs):
+        return self
+
+    def __enter__(self):
+        return self  # Allows `with` statement usage
+
+    def __exit__(self, *args, **kwargs):
+        pass  # Clean exit
+
+
+class GradioTqdmWrapper:
+    """Mock tqdm class that does nothing when progress bars are disabled."""
+    def __init__(self, *args, **kwargs):
+        self._tqdm_cls = args[0]
+        self._total = None
+        self._tqdm_instance = None
+        self._description = None
+
+    def __iter__(self):
+        self.update()
+
+    def update(self, *args, **kwargs):
+        self._tqdm_instance.__next__()
+
+    def __call__(self, *args, **kwargs):
+        self._total = kwargs['total']
+        self._description = kwargs.get("desc", "Iterate")
+
+        self._tqdm_instance = self._tqdm_cls(range(self._total), desc=self._description)
+        return self
+
     def __enter__(self):
         return self  # Allows `with` statement usage
 
@@ -62,6 +93,19 @@ class SingletonBase:
         if cls not in cls._instances:
             cls._instances[cls] = super(SingletonBase, cls).__new__(cls)
         return cls._instances[cls]
+
+
+def get_tqdm_cls(progressbar: bool = True):
+    # Try importing tqdm only if progress bar is enabled
+    try:
+        if progressbar:
+            from tqdm import tqdm
+        else:
+            raise ImportError()
+    except ImportError:
+        tqdm = DummyTqdm  # Use mock progress bar
+
+    return tqdm
 
 
 def get_cuda_device_string():

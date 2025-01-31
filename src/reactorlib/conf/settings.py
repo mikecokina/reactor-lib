@@ -12,6 +12,7 @@ class DetectionOptions:
     det_thresh: float = 0.5
     det_maxnum: int = 0
     mask_size: int = 1
+    reverse_detection_order: bool = False
 
 
 @dataclass

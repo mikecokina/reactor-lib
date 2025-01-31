@@ -137,6 +137,7 @@ def get_face_single(
         *,
         faces,
         face_index=0,
+        reverse_detection_order: bool = False
 ) -> Tuple[Union[Face | None], int, int, Text]:
     buffalo_path = os.path.join(settings.MODELS_PATH, "insightface/models/buffalo_l.zip")
     if os.path.exists(buffalo_path):
@@ -159,6 +160,10 @@ def get_face_single(
         logger.warning(f"Cannot detect any Gender for Face index = %s", face_index)
 
     try:
-        return sorted(faces, key=lambda x: x.bbox[0])[face_index], 0, face_age, face_gender
+        return sorted(
+            faces,
+            key=lambda x: x.bbox[0],
+            reverse=reverse_detection_order
+        )[face_index], 0, face_age, face_gender
     except IndexError:
         return None, 0, face_age, face_gender

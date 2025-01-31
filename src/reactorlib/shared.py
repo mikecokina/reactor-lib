@@ -11,6 +11,22 @@ from . import settings
 from .logger import logger
 
 
+# Define a mock tqdm class
+class DummyTqdm:
+    """Mock tqdm class that does nothing when progress bars are disabled."""
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def update(self, *args, **kwargs):
+        pass
+
+    def __enter__(self):
+        return self  # Allows `with` statement usage
+
+    def __exit__(self, *args, **kwargs):
+        pass  # Clean exit
+
+
 class SharedModelKeyMixin:
     """Mixin that provides _model and _key attributes and their properties."""
 
@@ -115,3 +131,16 @@ def get_warp_affine_border_value(img: np.ndarray) -> Union[int, Tuple]:
         border_value = 0.0
 
     return border_value
+
+
+def get_bytes_from_url(path) -> bytes:
+    import requests
+
+    if path.startswith('/'):
+        with open(path, 'rb') as f:
+            image_bytes = f.read()
+    else:
+        resp = requests.get(path)
+        assert resp.ok
+        image_bytes = resp.content
+    return image_bytes

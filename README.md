@@ -25,6 +25,16 @@ The face swap python library based on sd-webui-reactor extension
 
 `pip install git+https://github.com/mikecokina/reactor-lib.git@master`
 
+### Video editing
+
+For video editing is recommended to install 
+
+```
+sudo apt update
+sudo apt install libavcodec-dev libavformat-dev libswscale-dev ffmpeg
+```
+
+or packages related to your OS
 
 ### onnxruntime for CUDA 12.X
 pip install --pre --index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/ORT-Nightly/pypi/simple/ onnxruntime-gpu
@@ -59,7 +69,7 @@ def main():
             codeformer_visibility=1.0,
             codeformer_weight=0.5,
             restore_face_only=False,
-            # Face enhancer detection options
+            # Face enhancer detection options for BiseNet
             detection_options=DetectionOptions(
                 det_thresh=0.25,
                 det_maxnum=0
@@ -142,6 +152,60 @@ def main():
         progressbar=False,
     )
 
+
+if __name__ == '__main__':
+    main()
+```
+
+## Example of video processing
+```python
+from reactorlib import (
+    settings, DetectionOptions, EnhancementOptions, 
+    FaceBlurOptions, FaceEnhancementOptions, video_swap
+)
+
+def main():
+    settings.configure(**{
+        'DEVICE': 'CUDA',
+    })
+
+    enhancement_options = EnhancementOptions(
+        face_enhancement_options=FaceEnhancementOptions(
+            do_enhancement=True,
+            enhance_target=False,
+            codeformer_visibility=0.5,
+            codeformer_weight=0.5,
+            restore_face_only=True,
+            detection_options=DetectionOptions(
+                det_thresh=0.25,
+                det_maxnum=0
+            )
+        ),
+    )
+    detection_options = DetectionOptions(det_thresh=0.65, det_maxnum=0)
+    face_blur_options = FaceBlurOptions(
+        do_face_blur=False,
+        do_video_noise=False,
+        blur_radius=2,
+        blur_strength=0.2,
+        noise_pixel_size=1
+    )
+    
+    video_swap(
+        source_image="</path/to/image.ext>",
+        target_video="</path/to/video.mp4>",
+        source_faces_index=[0],
+        target_faces_index=[0],
+        output_directory="/absolute/path/to/store/results",
+        enhancement_options=enhancement_options,
+        detection_options=detection_options,
+        face_blur_options=face_blur_options,
+        progressbar=True,
+        face_mask_correction_size=10,
+        high_quality=False,
+        keep_frames=False,
+        desired_fps=25.0
+    )
 
 if __name__ == '__main__':
     main()

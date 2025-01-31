@@ -1,5 +1,8 @@
 import os.path
 import random
+import shutil
+import tempfile
+import time
 from pathlib import Path
 from typing import Union, List, Tuple
 
@@ -20,6 +23,7 @@ from .modloader import get_inswapper_model, get_reswapper_model
 from .nudity import is_nsfw
 from .shared import color_generator, listdir, torch_gc
 from .logger import logger
+from .video.utils import video2frames, frames2video
 
 
 # noinspection PyUnusedLocal
@@ -60,10 +64,10 @@ def pad_bbox(bbox: Union[Tuple, List], w: int, h: int, pad_percent: float):
 
 # noinspection DuplicatedCode
 def _apply_blur(
-    image: np.ndarray,
-    target_img: np.ndarray,
-    target_face: Face,
-    face_blur_options: FaceBlurOptions
+        image: np.ndarray,
+        target_img: np.ndarray,
+        target_face: Face,
+        face_blur_options: FaceBlurOptions
 ) -> Image.Image:
     random.seed(face_blur_options.seed)
 
@@ -392,7 +396,7 @@ def _bulk(
         if source_age != "None" or source_gender != "None":
             logger.info(f"Analyzed source: -{source_age}- y.o. {source_gender}")
 
-    for target_image in tqdm(target_images):
+    for target_image in tqdm(target_images, desc="Swapping", unit="images"):
         logger.info(f"Processing {target_image}")
         target_image = Path(target_image)
         output_image = Path(output_directory) / f"{target_image.stem}.png"
@@ -596,3 +600,71 @@ def swap(
             face_mask_correction=face_mask_correction,
             face_mask_correction_size=face_mask_correction_size
         )
+
+
+image_swap = swap
+
+
+def video_swap(
+        source_image: Union[Image.Image, str],
+        target_video: Union[Path, str],
+        output_directory: Union[Path, str] = None,
+        source_faces_index: Union[List[int], None] = None,
+        target_faces_index: Union[List[int], None] = None,
+        enhancement_options: Union[EnhancementOptions, None] = None,
+        face_blur_options: Union[FaceBlurOptions, None] = None,
+        detection_options: Union[DetectionOptions, None] = None,
+        face_mask_correction: bool = False,
+        face_mask_correction_size: int = 0,
+        high_quality: bool = False,
+        progressbar: bool = False,
+        keep_frames: bool = False,
+        desired_fps: float = 25.0
+):
+    if progressbar:
+        logger.get().configure(**dict(SUPPRESS_LOGGER=True))
+
+    suffix_ = int(time.time())
+    tmp_in_frames_dir = str(Path(tempfile.gettempdir()) / f"frames_in_{suffix_}")
+    output_frames_dir = str(Path(output_directory) / f"frames_out_{suffix_}")
+    output_video_file = Path(output_directory) / f"{Path(target_video).stem}_swapped.mp4"
+    os.makedirs(output_directory, exist_ok=True)
+
+    try:
+        # Split video to frames
+        _, effective_fps = video2frames(
+            video_path=target_video,
+            output_directory=tmp_in_frames_dir,
+            high_quality=high_quality,
+            desired_fps=desired_fps
+        )
+
+        # Do a bulk swapping
+        retval = _bulk(
+            source_image=source_image,
+            input_directory=tmp_in_frames_dir,
+            output_directory=output_frames_dir,
+            source_faces_index=source_faces_index,
+            target_faces_index=target_faces_index,
+            enhancement_options=enhancement_options,
+            detection_options=detection_options,
+            face_blur_options=face_blur_options,
+            face_mask_correction=face_mask_correction,
+            face_mask_correction_size=face_mask_correction_size,
+            skip_if_exists=False,
+            progressbar=progressbar
+        )
+
+        frames2video(
+            video_path=output_video_file,
+            input_directory=output_frames_dir,
+            fps=effective_fps
+        )
+    finally:
+        # Cleanup
+        if os.path.isdir(output_frames_dir) and not keep_frames:
+            shutil.rmtree(output_frames_dir)
+        if os.path.isdir(tmp_in_frames_dir):
+            shutil.rmtree(tmp_in_frames_dir)
+
+    return retval

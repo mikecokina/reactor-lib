@@ -44,8 +44,9 @@ def get_face_mask(
             mask_size=detection_options.mask_size,
             use_minimal_area=False
         )
+        kernel = (detection_options.mask_blur_kernel, detection_options.mask_blur_kernel)
         # noinspection DuplicatedCode
-        face_mask_arr = cv2.blur(face_mask_arr, (12, 12))
+        face_mask_arr = cv2.blur(face_mask_arr, kernel)
         larger_mask = cv2.resize(face_mask_arr, dsize=(face.width, face.height))
         entire_mask_image = np.zeros_like(np.array(image))
         entire_mask_image[face.top: face.bottom, face.left: face.right] = larger_mask

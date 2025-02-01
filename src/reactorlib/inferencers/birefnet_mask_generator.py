@@ -9,11 +9,12 @@ from PIL import Image
 from onnxruntime import InferenceSession
 from torchvision import transforms
 
+from .mixins import MaskGeneratorMixin
 from .. conf.settings import settings, FaceMasker, FaceMaskModels
 from .. shared import download_model
 
 
-class BiRefNetMaskGenerator(object):
+class BiRefNetMaskGenerator(MaskGeneratorMixin):
     def __init__(self) -> None:
         self._image_size = 512
 
@@ -45,7 +46,7 @@ class BiRefNetMaskGenerator(object):
     def name():
         return "BiRefNet"
 
-    # noinspection DuplicatedCode
+    # noinspection DuplicatedCode,PyUnusedLocal
     def generate_mask(
             self,
             face_image: np.ndarray,
@@ -62,8 +63,7 @@ class BiRefNetMaskGenerator(object):
             face_image = cv2.resize(face_image, dsize=(rw, rh))
 
         mask = self._get_mask(face_image)
-        if mask_size > 0:
-            mask = cv2.dilate(mask, np.ones((5, 5), np.uint8), iterations=mask_size)
+        mask = self.morph_mask(mask, mask_size=mask_size)
 
         if w != 512 or h != 512:
             mask = cv2.resize(mask, dsize=(w, h))

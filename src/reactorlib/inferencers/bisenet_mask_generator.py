@@ -9,10 +9,11 @@ from facexlib.utils.misc import img2tensor
 from torchvision.transforms.functional import normalize
 
 from . mask_generator import MaskGenerator
+from .mixins import MaskGeneratorMixin
 from .. import settings
 
 
-class BiSeNetMaskGenerator(MaskGenerator):
+class BiSeNetMaskGenerator(MaskGenerator, MaskGeneratorMixin):
     def __init__(self) -> None:
         self.mask_model = init_parsing_model(
             device=settings.device,
@@ -56,9 +57,7 @@ class BiSeNetMaskGenerator(MaskGenerator):
         face = face.copy().astype(np.uint8)
 
         mask = self.__to_mask(face, affected_areas)
-
-        if mask_size > 0:
-            mask = cv2.dilate(mask, np.ones((5, 5), np.uint8), iterations=mask_size)
+        mask = self.morph_mask(mask, mask_size=mask_size)
 
         if w != 512 or h != 512:
             mask = cv2.resize(mask, dsize=(w, h))

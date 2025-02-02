@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import copy
 import os
 from functools import cached_property
-from typing import Callable, Union
+from typing import Callable, Union, List
 
 import PIL.Image
 import cv2
@@ -12,19 +13,21 @@ import torch
 
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
 
-from .inferencers.maskers import get_masker_cache
-from . logger import logger
+from .inferencers.maskers import get_face_masker_from_cache, get_hair_masker_from_cache
+from .logger import logger
 from . import shared, settings, images, face_analyzer
-from . entities.face import FaceArea
-from . entities.rect import Rect
+from .entities.face import FaceArea
+from .entities.rect import Rect
 
-from . conf.settings import EnhancementOptions
+from .conf.settings import EnhancementOptions, DetectionOptions
 
 
-def get_face_mask(
+def _get_mask(
         image: np.ndarray,
+        affected_areas: List[str],
         detection_options,
 ) -> np.ndarray:
+    # Affectet areas works for FaceMasker.bisenet only
     try:
         analyzed_face = face_analyzer.analyze_faces(
             image,
@@ -32,7 +35,11 @@ def get_face_mask(
             det_maxnum=detection_options.det_maxnum
         )[0]
 
-        mask_generator = get_masker_cache().model
+        if "Hair" in affected_areas:
+            mask_generator = get_hair_masker_from_cache().model
+        else:
+            mask_generator = get_face_masker_from_cache().model
+
         face = FaceArea(image, Rect.from_ndarray(np.array(analyzed_face.bbox)), 1.6, 512, "")
         face_image = np.array(face.image)
         face_area_on_image = face.face_area_on_image
@@ -40,7 +47,7 @@ def get_face_mask(
         face_mask_arr = mask_generator.generate_mask(
             face_image,
             face_area_on_image=face_area_on_image,
-            affected_areas=["Face"],
+            affected_areas=affected_areas,
             mask_size=detection_options.mask_size,
             use_minimal_area=False
         )
@@ -58,29 +65,57 @@ def get_face_mask(
     return entire_mask_image
 
 
+def get_hair_mask(
+        image: np.ndarray,
+        detection_options,
+):
+    return _get_mask(image, affected_areas=["Hair"], detection_options=detection_options)
+
+
+def get_face_mask(
+        image: np.ndarray,
+        detection_options,
+) -> np.ndarray:
+    return _get_mask(image, affected_areas=["Face"], detection_options=detection_options)
+
+
 def restore_with_face_helper(
         np_image: np.ndarray,
-        face_helper: FaceRestoreHelper,
+        face_helper_source_im: FaceRestoreHelper,
         restore_face: Callable[[torch.Tensor], torch.Tensor],
-        enhancement_options: EnhancementOptions
+        enhancement_options: EnhancementOptions,
+        np_mask: Union[np.ndarray, None]
 ) -> np.ndarray:
-
     from torchvision.transforms.functional import normalize
+    np_mask = np_mask if np_mask is not None else np_image
     np_image = np_image[:, :, ::-1]
+    np_mask = np_mask[:, :, ::-1]
     original_resolution = np_image.shape[0:2]
 
     try:
         logger.debug("Detecting faces...")
 
-        face_helper.clean_all()
-        face_helper.read_image(np_image)
-        face_helper.get_face_landmarks_5(only_center_face=False, resize=640, eye_dist_threshold=5)
-        face_helper.align_warp_face()
+        # Restoration image face helper
+        face_helper_source_im.clean_all()
+        face_helper_source_im.read_image(np_image)
+        face_helper_source_im.get_face_landmarks_5(only_center_face=False, resize=640, eye_dist_threshold=5)
+        face_helper_source_im.align_warp_face()
 
-        logger.debug(f"Found {str(len(face_helper.cropped_faces))} faces, restoring")
+        if enhancement_options.face_enhancement_options.restore_face_only:
+            # Mask source image face helper
+            face_helper_mask_im = copy.deepcopy(face_helper_source_im)
+            face_helper_mask_im.read_image(np_mask)
+            # Reset cropped_faces fromm copied object
+            face_helper_mask_im.cropped_faces = []
+            face_helper_mask_im.align_warp_face()
+        else:
+            face_helper_mask_im = face_helper_source_im
 
-        for cropped_face in face_helper.cropped_faces:
-            cropped_face_t = images.bgr_image_to_rgb_tensor(cropped_face / 255.0)
+        logger.debug(f"Found {str(len(face_helper_source_im.cropped_faces))} faces, restoring")
+
+        face_pairs = zip(face_helper_source_im.cropped_faces, face_helper_mask_im.cropped_faces)
+        for cropped_face_source, cropped_mask_source in face_pairs:
+            cropped_face_t = images.bgr_image_to_rgb_tensor(cropped_face_source / 255.0)
             normalize(cropped_face_t, [0.5, 0.5, 0.5], [0.5, 0.5, 0.5], inplace=True)
             cropped_face_t = cropped_face_t.unsqueeze(0).to(settings.device)
 
@@ -98,21 +133,36 @@ def restore_with_face_helper(
             # Face only if required
             if enhancement_options.face_enhancement_options.restore_face_only:
                 face_mask_arr = get_face_mask(
-                    image=cropped_face,
+                    image=cropped_mask_source,
                     detection_options=enhancement_options.face_enhancement_options.detection_options
                 )
                 # noinspection PyTypeChecker
                 restored_face = np.array(PIL.Image.composite(
                     PIL.Image.fromarray(restored_face),
-                    PIL.Image.fromarray(cropped_face),
+                    PIL.Image.fromarray(cropped_face_source),
                     PIL.Image.fromarray(face_mask_arr).convert('L')
                 ))
 
-            face_helper.add_restored_face(restored_face)
+            if enhancement_options.face_enhancement_options.restore_hair:
+                hair_mask_arr = get_hair_mask(
+                    image=cropped_mask_source,
+                    detection_options=DetectionOptions(
+                        mask_size=0,
+                        mask_blur_kernel=12,
+                    )
+                )
+
+                restored_face = np.array(PIL.Image.composite(
+                    PIL.Image.fromarray(restored_face),
+                    PIL.Image.fromarray(cropped_mask_source),
+                    PIL.Image.fromarray(255 - hair_mask_arr).convert('L')
+                ))
+
+            face_helper_source_im.add_restored_face(restored_face)
 
         logger.debug("Merging restored faces into image")
-        face_helper.get_inverse_affine(None)
-        img = face_helper.paste_faces_to_input_image()
+        face_helper_source_im.get_inverse_affine(None)
+        img = face_helper_source_im.paste_faces_to_input_image()
         img = img[:, :, ::-1]
         if original_resolution != img.shape[0:2]:
             img = cv2.resize(
@@ -124,7 +174,7 @@ def restore_with_face_helper(
             )
         logger.debug("Face restoration complete")
     finally:
-        face_helper.clean_all()
+        face_helper_source_im.clean_all()
     return img
 
 
@@ -186,10 +236,11 @@ class CommonFaceRestoration(FaceRestoration):
         raise NotImplementedError("load_net must be implemented by subclasses")
 
     def restore_with_helper(
-        self,
-        np_image: np.ndarray,
-        restore_face: Callable[[torch.Tensor], torch.Tensor],
-        enhancement_options
+            self,
+            np_image: np.ndarray,
+            restore_face: Callable[[torch.Tensor], torch.Tensor],
+            enhancement_options,
+            np_mask: np.ndarray = None
     ) -> np.ndarray:
         self.net = self.load_net()
 
@@ -198,5 +249,6 @@ class CommonFaceRestoration(FaceRestoration):
             np_image,
             self.face_helper,
             restore_face,
-            enhancement_options
+            enhancement_options,
+            np_mask
         )

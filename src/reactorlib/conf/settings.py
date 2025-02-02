@@ -13,6 +13,7 @@ class DetectionOptions:
     det_maxnum: int = 0
     mask_size: int = 0
     mask_blur_kernel: int = 12
+    use_original_mask_source: bool = False
     reverse_detection_order: bool = False
 
 
@@ -31,10 +32,12 @@ class ImageEnhancementOptions:
 class FaceEnhancementOptions:
     do_enhancement: bool = True
     enhance_target: bool = False
+    enhance_loops: bool = 1
     scale: int = 1
     codeformer_visibility: float = 0.5
     codeformer_weight: float = 0.5
     restore_face_only: bool = False
+    restore_hair: bool = False
     detection_options: DetectionOptions = field(default_factory=DetectionOptions)
 
 

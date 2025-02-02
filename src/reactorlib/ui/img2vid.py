@@ -107,7 +107,9 @@ def operate(
             skip_if_exists=False,
             progressbar=True,
             face_blur_options=FaceBlurOptions(),
-            gr_progressbar=progress.tqdm
+            gr_progressbar=progress.tqdm,
+            start_frame=1,
+            end_frame=None
         )
 
         frames2video(

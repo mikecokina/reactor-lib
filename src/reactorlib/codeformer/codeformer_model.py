@@ -63,7 +63,8 @@ class FaceRestorerCodeFormer(CommonFaceRestoration):
             self,
             np_image,
             w: float | None = None,
-            enhancement_options=None
+            enhancement_options=None,
+            np_mask: np.ndarray = None
     ):
         if w is None:
             w = EnhancementOptions.face_enhancement_options.codeformer_weight
@@ -77,6 +78,7 @@ class FaceRestorerCodeFormer(CommonFaceRestoration):
             np_image,
             restore_face,
             enhancement_options,
+            np_mask
         )
 
     @staticmethod
@@ -88,6 +90,7 @@ def _restore_face(
         image: Image.Image,
         instance: FaceRestorerCodeFormer,
         enhancement_options: EnhancementOptions,
+        np_mask: np.ndarray = None
 ) -> Image.Image:
     result_image = image
 
@@ -97,7 +100,8 @@ def _restore_face(
     numpy_image = instance.restore(
         numpy_image,
         w=enhancement_options.face_enhancement_options.codeformer_weight,
-        enhancement_options=enhancement_options
+        enhancement_options=enhancement_options,
+        np_mask=np_mask
     )
     restored_image = Image.fromarray(numpy_image)
     result_image = Image.blend(
@@ -110,6 +114,7 @@ def _restore_face(
 def enhance_image(
         image: Image.Image,
         enhancement_options: EnhancementOptions,
+        np_mask: np.ndarray = None
 ) -> Image.Image:
     if not code_former_cache.model:
         codeformer = FaceRestorerCodeFormer.setup_model(settings.FACE_RESTORATION_MODEL_DIR)
@@ -122,5 +127,6 @@ def enhance_image(
             image=image,
             instance=code_former_cache.model,
             enhancement_options=enhancement_options,
+            np_mask=np_mask
         )
     return result_image

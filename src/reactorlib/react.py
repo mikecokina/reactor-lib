@@ -18,7 +18,7 @@ from .codeformer.codeformer_model import enhance_image
 from .conf.settings import EnhancementOptions, DetectionOptions, FaceBlurOptions, FaceSwapper
 from .entities.face import FaceArea
 from .entities.rect import Rect
-from .inferencers.maskers import get_masker_cache
+from .inferencers.maskers import get_face_masker_from_cache
 from .modloader import get_inswapper_model, get_reswapper_model
 from .nudity import is_nsfw
 from .shared import color_generator, listdir, torch_gc, get_tqdm_cls
@@ -71,7 +71,7 @@ def _apply_blur(
 ) -> Image.Image:
     random.seed(face_blur_options.seed)
 
-    mask_generator = get_masker_cache().model
+    mask_generator = get_face_masker_from_cache().model
     face = FaceArea(target_img, Rect.from_ndarray(np.array(target_face.bbox)), 1.6, 512, "")
     face_image = np.array(face.image)
     _process_face_image(face)
@@ -139,7 +139,7 @@ def _apply_face_mask(
 ) -> np.ndarray:
     logger.info("Correcting face mask")
 
-    mask_generator = get_masker_cache().model
+    mask_generator = get_face_masker_from_cache().model
 
     face = FaceArea(target_image, Rect.from_ndarray(np.array(target_face.bbox)), 1.6, 512, "")
     face_image = np.array(face.image)
@@ -324,7 +324,11 @@ def operate(
     result_image = Image.fromarray(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
 
     if enhancement_options.face_enhancement_options.do_enhancement and swapped > 0:
-        result_image = enhance_image(result_image, enhancement_options)
+        use_original_as_mask = enhancement_options.face_enhancement_options.detection_options.use_original_mask_source
+        enhance_image_kwargs = dict(**dict(np_mask=target_img[:, :, ::-1]) if use_original_as_mask else {})
+
+        for _ in range(0, enhancement_options.face_enhancement_options.enhance_loops):
+            result_image = enhance_image(result_image, enhancement_options, **enhance_image_kwargs)
 
     if (face_blur_options.do_face_blur or face_blur_options.do_video_noise) and target_face is not None:
         logger.info("Applying blur to final image")
@@ -352,7 +356,9 @@ def _bulk(
         face_mask_correction: bool,
         face_mask_correction_size: int,
         skip_if_exists: bool,
-        progressbar: bool,
+        start_frame: int,
+        end_frame: int = None,
+        progressbar: bool = True,
         **kwargs
 ) -> Tuple[None, int]:
     tqdm = get_tqdm_cls(progressbar=progressbar)
@@ -392,7 +398,10 @@ def _bulk(
         if source_age != "None" or source_gender != "None":
             logger.info(f"Analyzed source: -{source_age}- y.o. {source_gender}")
 
-    for target_image in tqdm(target_images, desc="Swapping", unit="images"):
+    for idx, target_image in tqdm(enumerate(target_images), total=len(target_images), desc="Swapping", unit="images"):
+        if (idx + 1 < start_frame) or (end_frame is not None and idx > end_frame):
+            continue
+
         logger.info(f"Processing {target_image}")
         target_image = Path(target_image)
         output_image = Path(output_directory) / f"{target_image.stem}.png"
@@ -543,7 +552,9 @@ def swap(
         face_mask_correction: bool = False,
         face_mask_correction_size: int = 0,
         skip_if_exists: bool = False,
-        progressbar: bool = False
+        progressbar: bool = False,
+        start_frame: int = 1,
+        end_frame: int = None
 ) -> Tuple[Image.Image, int] | Tuple[None, int]:
     if progressbar:
         logger.get().configure(**dict(SUPPRESS_LOGGER=True))
@@ -581,6 +592,8 @@ def swap(
             face_mask_correction=face_mask_correction,
             face_mask_correction_size=face_mask_correction_size,
             skip_if_exists=skip_if_exists,
+            start_frame=start_frame,
+            end_frame=end_frame,
             progressbar=progressbar
         )
 
@@ -602,6 +615,7 @@ def swap(
 image_swap = swap
 
 
+# noinspection DuplicatedCode
 def video_swap(
         source_image: Union[Image.Image, str],
         target_video: Union[Path, str],
@@ -616,7 +630,9 @@ def video_swap(
         high_quality: bool = False,
         progressbar: bool = False,
         keep_frames: bool = False,
-        desired_fps: float = 25.0
+        desired_fps: float = 25.0,
+        start_frame: int = 1,
+        end_frame: int = None
 ):
     if progressbar:
         logger.get().configure(**dict(SUPPRESS_LOGGER=True))
@@ -649,7 +665,9 @@ def video_swap(
             face_mask_correction=face_mask_correction,
             face_mask_correction_size=face_mask_correction_size,
             skip_if_exists=False,
-            progressbar=progressbar
+            progressbar=progressbar,
+            start_frame=start_frame,
+            end_frame=end_frame
         )
 
         frames2video(

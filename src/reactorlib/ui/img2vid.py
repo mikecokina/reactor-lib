@@ -50,6 +50,7 @@ def operate(
             codeformer_visibility=kwargs.get("codeformer_visibility", 0.5),
             codeformer_weight=kwargs.get("codeformer_weight", 0.5),
             restore_face_only=kwargs.get("restore_face_only", False),
+            restore_hair=kwargs.get("restore_hair", False),
             detection_options=DetectionOptions(
                 det_thresh=0.25,
                 det_maxnum=0
@@ -136,12 +137,10 @@ def operate(
 
 def update_button(source_image, target_video, output_directory):
     # Check if both images are provided
-
-    if ((not os.path.isfile(target_video))
-            or (not isinstance(output_directory, str) or len(output_directory) < 3)):
-        return gr.update(interactive=False, variant="secondary")
-
-    if source_image is not None:
+    if ((source_image is not None)
+            and (target_video is not None)
+            and isinstance(output_directory, str)
+            and len(output_directory) > 3):
         # Enable button and change color
         return gr.update(interactive=True, variant="primary")
     else:
@@ -154,8 +153,9 @@ def main():
     with gr.Blocks() as demo:
         gr.Markdown("### Face Enhancement Options")
         with gr.Row():
-            restore_face_only = gr.Checkbox(label="restore_face_only", value=True)
             do_enhancement = gr.Checkbox(label="do_enhancement", value=True)
+            restore_face_only = gr.Checkbox(label="restore_face_only", value=True)
+            restore_hair = gr.Checkbox(label="restore_hair", value=False)
             codeformer_visibility = gr.Slider(value=0.5, minimum=0, maximum=1, step=0.05, label="Codeformer Visibility")
             codeformer_weight = gr.Slider(value=0.5, minimum=0, maximum=1, step=0.05, label="Codeformer Weight")
 
@@ -189,14 +189,16 @@ def main():
                 choices=["CUDA", "CPU"]
             )
 
+        gr.Markdown("### Vieo Processor Options")
+        with gr.Row():
+            keep_frames = gr.Checkbox(label="keep_frames", value=False)
+            output_directory = gr.Text(label="Output Directory")
+
         # gr.Markdown("### Input Images")
         with gr.Row():  # Create a row for the inputs
             source_image = gr.Image(type="pil", label="Source Image", width=300, height=400)
-
+            target_video = gr.Video(label="Target Video", width=300, height=400)
             with gr.Column():
-                target_video = gr.Text(label="Target Video")
-                output_directory = gr.Text(label="Output Directory")
-                keep_frames = gr.Checkbox(label="keep_frames", value=False)
                 progress = gr.Text(label="Progress", interactive=False)
 
         inputs = {
@@ -214,7 +216,8 @@ def main():
             "face_masker": face_masker,
             "face_source_index": face_source_index,
             "face_target_index": face_target_index,
-            "device_option": device_option
+            "device_option": device_option,
+            "restore_hair": restore_hair,
         }
 
         with gr.Row():

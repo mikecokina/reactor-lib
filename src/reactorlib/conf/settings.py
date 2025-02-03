@@ -38,6 +38,7 @@ class FaceEnhancementOptions:
     codeformer_weight: float = 0.5
     restore_face_only: bool = False
     restore_hair: bool = False
+    face_size: int = 512
     detection_options: DetectionOptions = field(default_factory=DetectionOptions)
 
 

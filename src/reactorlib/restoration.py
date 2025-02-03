@@ -197,18 +197,21 @@ class CommonFaceRestoration(FaceRestoration):
     model_url: str
     model_download_name: str
 
-    def __init__(self, model_path: str):
+    def __init__(self, model_path: str, face_size: int = 512):
         super().__init__()
         self.net: Union[spandrel.ModelDescriptor, None] = None
         self.model_path = model_path
+        self.face_size = face_size
         os.makedirs(model_path, exist_ok=True)
 
-    @staticmethod
-    def create_face_helper(device) -> FaceRestoreHelper:
+    # noinspection PyMethodMayBeStatic
+    def create_face_helper(self, device) -> FaceRestoreHelper:
         from facexlib.detection import retinaface
         from facexlib.utils.face_restoration_helper import FaceRestoreHelper
         if hasattr(retinaface, 'device'):
             retinaface.device = device
+        # update face_size=512 to self.face_size when find out how to run
+        # codeformer with 1024 input or retrain or use different model
         return FaceRestoreHelper(
             upscale_factor=1,
             face_size=512,

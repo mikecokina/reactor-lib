@@ -82,8 +82,8 @@ class FaceRestorerCodeFormer(CommonFaceRestoration):
         )
 
     @staticmethod
-    def setup_model(dirname: str) -> FaceRestorerCodeFormer:
-        return FaceRestorerCodeFormer(dirname)
+    def setup_model(dirname: str, face_size: int = 512) -> FaceRestorerCodeFormer:
+        return FaceRestorerCodeFormer(model_path=dirname, face_size=face_size)
 
 
 def _restore_face(
@@ -105,7 +105,9 @@ def _restore_face(
     )
     restored_image = Image.fromarray(numpy_image)
     result_image = Image.blend(
-        original_image, restored_image, enhancement_options.face_enhancement_options.codeformer_visibility
+        original_image,
+        restored_image,
+        enhancement_options.face_enhancement_options.codeformer_visibility
     )
 
     return result_image
@@ -117,7 +119,10 @@ def enhance_image(
         np_mask: np.ndarray = None
 ) -> Image.Image:
     if not code_former_cache.model:
-        codeformer = FaceRestorerCodeFormer.setup_model(settings.FACE_RESTORATION_MODEL_DIR)
+        codeformer = FaceRestorerCodeFormer.setup_model(
+            dirname=settings.FACE_RESTORATION_MODEL_DIR,
+            face_size=enhancement_options.face_enhancement_options.face_size
+        )
         code_former_cache.model = codeformer
 
     logger.info(f"Restoring the face with CodeFormer " +

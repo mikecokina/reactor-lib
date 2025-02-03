@@ -124,8 +124,8 @@ def restore_with_face_helper(
                 with torch.no_grad():
                     cropped_face_t = restore_face(cropped_face_t)
                 shared.torch_gc()
-            except Exception:
-                print('Failed face-restoration inference')
+            except Exception as e:
+                logger.error(f'Failed face-restoration inference, {str(e)}')
 
             restored_face = images.rgb_tensor_to_bgr_image(cropped_face_t, min_max=(-1, 1))
             restored_face = (restored_face * 255.0).astype('uint8')
@@ -149,14 +149,18 @@ def restore_with_face_helper(
                     detection_options=DetectionOptions(
                         mask_size=0,
                         mask_blur_kernel=12,
+                        det_thresh=enhancement_options.face_enhancement_options.detection_options.det_thresh,
+                        det_maxnum=enhancement_options.face_enhancement_options.detection_options.det_maxnum
                     )
                 )
 
-                restored_face = np.array(PIL.Image.composite(
-                    PIL.Image.fromarray(restored_face),
-                    PIL.Image.fromarray(cropped_mask_source),
-                    PIL.Image.fromarray(255 - hair_mask_arr).convert('L')
-                ))
+                # If missing detection do not cover entire restored swapped image with target image
+                if not np.all(~hair_mask_arr.astype(bool)):
+                    restored_face = np.array(PIL.Image.composite(
+                        PIL.Image.fromarray(restored_face),
+                        PIL.Image.fromarray(cropped_mask_source),
+                        PIL.Image.fromarray(255 - hair_mask_arr).convert('L')
+                    ))
 
             face_helper_source_im.add_restored_face(restored_face)
 

@@ -32,7 +32,7 @@ class ImageEnhancementOptions:
 class FaceEnhancementOptions:
     do_enhancement: bool = True
     enhance_target: bool = False
-    enhance_loops: bool = 1
+    enhance_loops: int = 1
     scale: int = 1
     codeformer_visibility: float = 0.5
     codeformer_weight: float = 0.5

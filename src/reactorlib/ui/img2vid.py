@@ -50,8 +50,7 @@ def operate(
             codeformer_visibility=kwargs.get("codeformer_visibility", 0.5),
             codeformer_weight=kwargs.get("codeformer_weight", 0.5),
             restore_face_only=kwargs.get("restore_face_only", False),
-            restore_hair=kwargs.get("restore_hair", False),
-            detection_options=DetectionOptions(
+            face_detection_options=DetectionOptions(
                 det_thresh=0.25,
                 det_maxnum=0
             )
@@ -155,7 +154,6 @@ def main():
         with gr.Row():
             do_enhancement = gr.Checkbox(label="do_enhancement", value=True)
             restore_face_only = gr.Checkbox(label="restore_face_only", value=True)
-            restore_hair = gr.Checkbox(label="restore_hair", value=False)
             codeformer_visibility = gr.Slider(value=0.5, minimum=0, maximum=1, step=0.05, label="Codeformer Visibility")
             codeformer_weight = gr.Slider(value=0.5, minimum=0, maximum=1, step=0.05, label="Codeformer Weight")
 
@@ -217,7 +215,6 @@ def main():
             "face_source_index": face_source_index,
             "face_target_index": face_target_index,
             "device_option": device_option,
-            "restore_hair": restore_hair,
         }
 
         with gr.Row():

@@ -324,7 +324,7 @@ def operate(
     result_image = Image.fromarray(cv2.cvtColor(result, cv2.COLOR_BGR2RGB))
 
     if enhancement_options.face_enhancement_options.do_enhancement and swapped > 0:
-        use_original_as_mask = enhancement_options.face_enhancement_options.detection_options.use_original_mask_source
+        use_original_as_mask = enhancement_options.face_enhancement_options.face_detection_options.mask_from_source
         enhance_image_kwargs = dict(**dict(np_mask=target_img[:, :, ::-1]) if use_original_as_mask else {})
 
         for _ in range(0, enhancement_options.face_enhancement_options.enhance_loops):

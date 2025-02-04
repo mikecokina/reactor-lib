@@ -79,43 +79,36 @@ def get_face_mask(
     return _get_mask(image, affected_areas=["Face"], detection_options=detection_options)
 
 
+# noinspection DuplicatedCode
 def restore_with_face_helper(
         np_image: np.ndarray,
-        face_helper_source_im: FaceRestoreHelper,
+        face_helper: FaceRestoreHelper,
         restore_face: Callable[[torch.Tensor], torch.Tensor],
         enhancement_options: EnhancementOptions,
         np_mask: Union[np.ndarray, None]
 ) -> np.ndarray:
     from torchvision.transforms.functional import normalize
-    np_mask = np_mask if np_mask is not None else np_image
     np_image = np_image[:, :, ::-1]
-    np_mask = np_mask[:, :, ::-1]
     original_resolution = np_image.shape[0:2]
 
+    face_enhancement_options = enhancement_options.face_enhancement_options
+    face_detection_options = face_enhancement_options.face_detection_options
+    restore_face_only = enhancement_options.face_enhancement_options.restore_face_only
+
     try:
+        # 1) Enhance faces.
         logger.debug("Detecting faces...")
+        restored_faces = []
 
         # Restoration image face helper
-        face_helper_source_im.clean_all()
-        face_helper_source_im.read_image(np_image)
-        face_helper_source_im.get_face_landmarks_5(only_center_face=False, resize=640, eye_dist_threshold=5)
-        face_helper_source_im.align_warp_face()
+        face_helper.clean_all()
+        face_helper.read_image(np_image)
+        face_helper.get_face_landmarks_5(only_center_face=False, resize=640, eye_dist_threshold=5)
+        face_helper.align_warp_face()
 
-        if enhancement_options.face_enhancement_options.restore_face_only:
-            # Mask source image face helper
-            face_helper_mask_im = copy.deepcopy(face_helper_source_im)
-            face_helper_mask_im.read_image(np_mask)
-            # Reset cropped_faces fromm copied object
-            face_helper_mask_im.cropped_faces = []
-            face_helper_mask_im.align_warp_face()
-        else:
-            face_helper_mask_im = face_helper_source_im
-
-        logger.debug(f"Found {str(len(face_helper_source_im.cropped_faces))} faces, restoring")
-
-        face_pairs = zip(face_helper_source_im.cropped_faces, face_helper_mask_im.cropped_faces)
-        for cropped_face_source, cropped_mask_source in face_pairs:
-            cropped_face_t = images.bgr_image_to_rgb_tensor(cropped_face_source / 255.0)
+        logger.debug(f"Found {str(len(face_helper.cropped_faces))} faces, restoring")
+        for cropped_face in face_helper.cropped_faces:
+            cropped_face_t = images.bgr_image_to_rgb_tensor(cropped_face / 255.0)
             normalize(cropped_face_t, [0.5, 0.5, 0.5], [0.5, 0.5, 0.5], inplace=True)
             cropped_face_t = cropped_face_t.unsqueeze(0).to(settings.device)
 
@@ -130,56 +123,64 @@ def restore_with_face_helper(
             restored_face = images.rgb_tensor_to_bgr_image(cropped_face_t, min_max=(-1, 1))
             restored_face = (restored_face * 255.0).astype('uint8')
 
-            # Face only if required
-            if enhancement_options.face_enhancement_options.restore_face_only:
+            restored_faces.append(restored_face)
+
+        # 2) Replace face only.
+        if restore_face_only:
+
+            if np_mask is not None:
+                np_mask = np_mask[:, :, ::-1]
+                # Deep copy face helper for mask use
+                face_helper_mask = copy.deepcopy(face_helper)
+                face_helper_mask.read_image(np_mask)
+
+                # Reset cropped_faces fromm copied object
+                face_helper_mask.cropped_faces = []
+                face_helper_mask.align_warp_face()
+            else:
+                face_helper_mask = face_helper
+
+            for face_index in range(0, len(restored_faces)):
+                restored_face = restored_faces[face_index]
+                cropped_face_source = face_helper.cropped_faces[face_index]
+                cropped_mask_source = face_helper_mask.cropped_faces[face_index]
+
+                # Find face mask
                 face_mask_arr = get_face_mask(
                     image=cropped_mask_source,
-                    detection_options=enhancement_options.face_enhancement_options.detection_options
+                    detection_options=face_detection_options
                 )
-                # noinspection PyTypeChecker
+                # Alpha blend restored image with source face image
                 restored_face = np.array(PIL.Image.composite(
                     PIL.Image.fromarray(restored_face),
-                    PIL.Image.fromarray(cropped_face_source),
+                    PIL.Image.fromarray(cropped_mask_source),
                     PIL.Image.fromarray(face_mask_arr).convert('L')
                 ))
 
-            if enhancement_options.face_enhancement_options.restore_hair:
-                hair_mask_arr = get_hair_mask(
-                    image=cropped_mask_source,
-                    detection_options=DetectionOptions(
-                        mask_size=0,
-                        mask_blur_kernel=12,
-                        det_thresh=enhancement_options.face_enhancement_options.detection_options.det_thresh,
-                        det_maxnum=enhancement_options.face_enhancement_options.detection_options.det_maxnum
-                    )
-                )
+                restored_faces[face_index] = restored_face
 
-                # If missing detection do not cover entire restored swapped image with target image
-                if not np.all(~hair_mask_arr.astype(bool)):
-                    restored_face = np.array(PIL.Image.composite(
-                        PIL.Image.fromarray(restored_face),
-                        PIL.Image.fromarray(cropped_mask_source),
-                        PIL.Image.fromarray(255 - hair_mask_arr).convert('L')
-                    ))
-
-            face_helper_source_im.add_restored_face(restored_face)
-
+        # Put restored face back to original image
         logger.debug("Merging restored faces into image")
-        face_helper_source_im.get_inverse_affine(None)
-        img = face_helper_source_im.paste_faces_to_input_image()
-        img = img[:, :, ::-1]
-        if original_resolution != img.shape[0:2]:
-            img = cv2.resize(
-                img,
+
+        for restored_face in restored_faces:
+            # Add to helper for inverse affine transformation
+            face_helper.add_restored_face(restored_face)
+
+        face_helper.get_inverse_affine(None)
+        result_img = face_helper.paste_faces_to_input_image()
+        result_img = result_img[:, :, ::-1]
+        if original_resolution != result_img.shape[0:2]:
+            result_img = cv2.resize(
+                result_img,
                 (0, 0),
-                fx=original_resolution[1] / img.shape[1],
-                fy=original_resolution[0] / img.shape[0],
+                fx=original_resolution[1] / result_img.shape[1],
+                fy=original_resolution[0] / result_img.shape[0],
                 interpolation=cv2.INTER_LINEAR,
             )
         logger.debug("Face restoration complete")
     finally:
-        face_helper_source_im.clean_all()
-    return img
+        face_helper.clean_all()
+    return result_img
 
 
 class FaceRestoration(object):

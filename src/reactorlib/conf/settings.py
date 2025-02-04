@@ -13,7 +13,7 @@ class DetectionOptions:
     det_maxnum: int = 0
     mask_size: int = 0
     mask_blur_kernel: int = 12
-    use_original_mask_source: bool = False
+    mask_from_source: bool = False
     reverse_detection_order: bool = False
 
 
@@ -37,9 +37,8 @@ class FaceEnhancementOptions:
     codeformer_visibility: float = 0.5
     codeformer_weight: float = 0.5
     restore_face_only: bool = False
-    restore_hair: bool = False
     face_size: int = 512
-    detection_options: DetectionOptions = field(default_factory=DetectionOptions)
+    face_detection_options: DetectionOptions = field(default_factory=DetectionOptions)
 
 
 @dataclass

@@ -27,7 +27,7 @@ def operate(
             codeformer_visibility=kwargs.get("codeformer_visibility", 0.5),
             codeformer_weight=kwargs.get("codeformer_weight", 0.5),
             restore_face_only=kwargs.get("restore_face_only", False),
-            detection_options=DetectionOptions(
+            face_detection_options=DetectionOptions(
                 det_thresh=0.25,
                 det_maxnum=0
             )

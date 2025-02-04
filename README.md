@@ -72,7 +72,7 @@ def main():
             codeformer_weight=0.5,
             restore_face_only=False,
             # Face enhancer detection options for BiseNet
-            detection_options=DetectionOptions(
+            face_detection_options=DetectionOptions(
                 det_thresh=0.25,
                 det_maxnum=0
             )
@@ -123,7 +123,7 @@ def main():
             codeformer_weight=0.5,
             restore_face_only=False,
             # Face enhancer detection options for face masking 
-            detection_options=DetectionOptions(
+            face_detection_options=DetectionOptions(
                 det_thresh=0.25,
                 det_maxnum=0
             )
@@ -178,7 +178,7 @@ def main():
             codeformer_visibility=0.5,
             codeformer_weight=0.5,
             restore_face_only=True,
-            detection_options=DetectionOptions(
+            face_detection_options=DetectionOptions(
                 det_thresh=0.25,
                 det_maxnum=0
             )
@@ -232,7 +232,7 @@ def main():
             codeformer_visibility=1.0,
             codeformer_weight=0.5,
             restore_face_only=True,  # this does the job
-            detection_options=DetectionOptions(
+            face_detection_options=DetectionOptions(
                 det_thresh=0.25,
                 det_maxnum=0
             )  # this plays role in face mask detection

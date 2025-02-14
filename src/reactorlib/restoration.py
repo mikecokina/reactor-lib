@@ -20,6 +20,7 @@ from .entities.face import FaceArea
 from .entities.rect import Rect
 
 from .conf.settings import EnhancementOptions, DetectionOptions
+from .shared import bbox_percentage
 
 
 def _get_mask(
@@ -29,11 +30,16 @@ def _get_mask(
 ) -> np.ndarray:
     # Affectet areas works for FaceMasker.bisenet only
     try:
-        analyzed_face = face_analyzer.analyze_faces(
+
+        # Select biggest detection
+        analyzed_faces = face_analyzer.analyze_faces(
             image,
             det_thresh=detection_options.det_thresh,
             det_maxnum=detection_options.det_maxnum
-        )[0]
+        )
+        covers = [bbox_percentage(*face.bbox, *image.shape[:2]) for face in analyzed_faces]
+        recommended_face_index = np.argsort(covers)[-1]
+        analyzed_face = analyzed_faces[recommended_face_index]
 
         if "Hair" in affected_areas:
             mask_generator = get_hair_masker_from_cache().model

@@ -188,3 +188,15 @@ def get_bytes_from_url(path) -> bytes:
         assert resp.ok
         image_bytes = resp.content
     return image_bytes
+
+
+def bbox_percentage(x1, y1, x2, y2, w, h):
+    # Compute the area of the bounding box
+    bbox_area = abs(x2 - x1) * abs(y2 - y1)
+
+    # Compute the area of the image
+    image_area = w * h
+
+    # Calculate the percentage of the image covered by the bbox
+    percentage = (bbox_area / image_area) * 100
+    return percentage

@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import torch
 
-from . import settings
+from .conf.settings import settings
 from .logger import logger
 
 

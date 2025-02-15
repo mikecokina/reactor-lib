@@ -60,7 +60,9 @@ class FaceBlurOptions:
 
 
 class FaceSwapper(enum.Enum):
-    inswapper = 'inswapper'
+    inswapper_128 = 'inswapper_128'
+    inswapper_256 = 'inswapper_256'
+    inswapper_512 = 'inswapper_512'
     reswapper_128 = 'reswapper_128'
     reswapper_256 = 'reswapper_256'
     reswapper_256_1567500 = 'reswapper_256_1567500'
@@ -110,7 +112,15 @@ class FaceSwapperModelOptions:
 
 class FaceSwapperModels(object):
     _config = {
-        FaceSwapper.inswapper.value: FaceSwapperModelOptions(
+        FaceSwapper.inswapper_128.value: FaceSwapperModelOptions(
+            filename="inswapper_128.onnx",
+            url="https://huggingface.co/mikestealth/inswapper/resolve/main/inswapper_128.onnx"
+        ),
+        FaceSwapper.inswapper_256.value: FaceSwapperModelOptions(
+            filename="inswapper_128.onnx",
+            url="https://huggingface.co/mikestealth/inswapper/resolve/main/inswapper_128.onnx"
+        ),
+        FaceSwapper.inswapper_512.value: FaceSwapperModelOptions(
             filename="inswapper_128.onnx",
             url="https://huggingface.co/mikestealth/inswapper/resolve/main/inswapper_128.onnx"
         ),
@@ -138,8 +148,8 @@ class FaceSwapperModels(object):
 class _Const(object):
     DISABLE_NSFW = True
     FACE_MASKER = FaceMasker.bisenet
-    FACE_SWAPPER = FaceSwapper.inswapper
-    _default_model = FaceSwapperModels.get_config(FaceSwapper.inswapper)
+    FACE_SWAPPER = FaceSwapper.inswapper_128
+    _default_model = FaceSwapperModels.get_config(FaceSwapper.inswapper_128)
 
     FACE_SWAPPER_MODEL_DOWNLOAD_NAME: str = _default_model.filename
     FACE_SWAPPER_MODEL_URL: str = _default_model.url

@@ -11,7 +11,7 @@ The face swap python library based on sd-webui-reactor extension
 ## Licence
 
 - All repo code is published under GPLv3 Licence
-- When using `FaceSwapper.inswapper` setting, please follow these  [licence conditions](https://github.com/deepinsight/insightface?tab=readme-ov-file#license).
+- When using `FaceSwapper.inswapper_<128|256|512>` setting, please follow these  [licence conditions](https://github.com/deepinsight/insightface?tab=readme-ov-file#license).
 - If you are using any ReSwapper models, please follow these [licence conditions](https://github.com/somanchiu/ReSwapper)
 
 ## Acknowledgement

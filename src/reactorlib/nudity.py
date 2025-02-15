@@ -1,7 +1,7 @@
 import numpy as np
 from nudenet import NudeDetector
 
-from . import settings
+from .conf.settings import settings
 from .shared import SingletonBase, SharedModelKeyMixin
 
 

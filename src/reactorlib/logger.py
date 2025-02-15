@@ -4,7 +4,7 @@ import sys
 import warnings
 from contextlib import contextmanager
 
-from . import settings
+from .conf.settings import settings
 
 settings.set_up_logging()
 

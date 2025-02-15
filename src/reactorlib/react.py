@@ -13,7 +13,8 @@ from PIL import Image
 from PIL import ImageFilter
 from insightface.app.common import Face
 
-from . import settings, images, face_analyzer
+from . import images, face_analyzer
+from .conf.settings import settings
 from .codeformer.codeformer_model import enhance_image
 from .conf.settings import EnhancementOptions, DetectionOptions, FaceBlurOptions, FaceSwapper
 from .entities.face import FaceArea
@@ -203,13 +204,17 @@ face_swapper_cache = FaceSwapperCache()
 
 def get_face_swapper_cache() -> FaceSwapperCache:
     if (face_swapper_cache.model is None) or (face_swapper_cache.key != settings.FACE_SWAPPER.value):
-        if settings.FACE_SWAPPER == FaceSwapper.inswapper:
+        if settings.FACE_SWAPPER in (
+                FaceSwapper.inswapper_128,
+                FaceSwapper.inswapper_256,
+                FaceSwapper.inswapper_512
+        ):
             face_swapper_cache.model = get_inswapper_model()
-        elif settings.FACE_SWAPPER in [
-            FaceSwapper.reswapper_128,
-            FaceSwapper.reswapper_256,
-            FaceSwapper.reswapper_256_1567500
-        ]:
+        elif settings.FACE_SWAPPER in (
+                FaceSwapper.reswapper_128,
+                FaceSwapper.reswapper_256,
+                FaceSwapper.reswapper_256_1567500
+        ):
             face_swapper_cache.model = get_reswapper_model()
         else:
             raise NotImplementedError(f"{settings.FACE_SWAPPER} not implemented")

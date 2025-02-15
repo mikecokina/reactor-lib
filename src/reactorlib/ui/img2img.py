@@ -38,7 +38,7 @@ def operate(
         det_maxnum=int(kwargs.get("det_maxnum", 0))
     )
 
-    face_swapper = FaceSwapper(kwargs.get('face_swapper', FaceSwapper.inswapper.value))
+    face_swapper = FaceSwapper(kwargs.get('face_swapper', FaceSwapper.inswapper_128.value))
     face_masker = FaceMasker(kwargs.get('face_masker', FaceMasker.bisenet.value))
 
     face_source_index = int(kwargs.get("face_source_index", 0))
@@ -98,7 +98,9 @@ def main():
             face_swapper = gr.Dropdown(
                 label="Face Swapper",
                 choices=[
-                    FaceSwapper.inswapper.value,
+                    FaceSwapper.inswapper_128.value,
+                    FaceSwapper.inswapper_256.value,
+                    FaceSwapper.inswapper_512.value,
                     FaceSwapper.reswapper_128.value,
                     FaceSwapper.reswapper_256_1567500.value
                 ])

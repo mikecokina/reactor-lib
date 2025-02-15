@@ -6,7 +6,7 @@ from typing import Union
 import PIL
 from PIL import Image
 
-from . import settings
+from .conf.settings import settings
 
 # noinspection PyUnresolvedReferences
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)

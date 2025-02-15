@@ -6,7 +6,7 @@ import numpy as np
 from PIL import Image
 from insightface.app.common import Face
 
-from . import settings
+from .conf.settings import settings
 from .logger import suppress_output
 from .modloader import get_analysis_model
 from .logger import logger

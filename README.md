@@ -20,6 +20,17 @@ The face swap python library based on sd-webui-reactor extension
 - *ReSwapper*: https://github.com/somanchiu/ReSwapper
 - *BiRefNet*: https://github.com/ZhengPeng7/BiRefNet
 
+## Examples
+
+### InSwapper
+| Target                      | Source                      | InSwapper 128 (native)             | InSwapper 256 (pixel-shifting)     | InSwapper 512 (pixel-shifting)     | 
+|-----------------------------|-----------------------------|------------------------------------|------------------------------------|------------------------------------|
+| ![image](assets/target.jpg) | ![image](assets/source.jpg) | ![image](assets/inswapper_128.jpg) | ![image](assets/inswapper_256.jpg) | ![image](assets/inswapper_512.jpg) |
+
+### ReSwapper
+| Target                      | Source                      | ReSwapper 128 (native)          | ReSwapper 256_1567500 (native)             | 
+|-----------------------------|-----------------------------|---------------------------------|--------------------------------------------|
+| ![image](assets/target.jpg) | ![image](assets/source.jpg) | ![image](assets/reswapper_128.jpg) | ![image](assets/reswapper_256_1567500.jpg) |
 
 ## Install
 

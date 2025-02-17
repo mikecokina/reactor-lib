@@ -32,6 +32,12 @@ The face swap python library based on sd-webui-reactor extension
 |-----------------------------|-----------------------------|---------------------------------|--------------------------------------------|
 | ![image](assets/target.jpg) | ![image](assets/source.jpg) | ![image](assets/reswapper_128.jpg) | ![image](assets/reswapper_256_1567500.jpg) |
 
+### CodeFormer
+
+| InSwapper 128 (native)             | CodeFormer (full restoration)        | CodeFormer (face only restoration)   | 
+|------------------------------------|--------------------------------------|--------------------------------------|
+| ![image](assets/inswapper_128.jpg) | ![image](assets/codeformer_full.jpg) | ![image](assets/codeformer_face.jpg) |
+
 ## Install
 
 `pip install git+https://github.com/mikecokina/reactor-lib.git@master`

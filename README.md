@@ -234,7 +234,7 @@ if __name__ == '__main__':
 
 ```python
 import PIL.Image
-from reactorlib import EnhancementOptions, DetectionOptions, enhance_image, settings, FaceEnhancementOptions
+from reactorlib import EnhancementOptions, DetectionOptions, enhance_face, settings, FaceEnhancementOptions
 
 
 def main():
@@ -255,7 +255,7 @@ def main():
             )  # this plays role in face mask detection
         )
     )
-    result = enhance_image(image, enhancement_options)
+    result = enhance_face(image, enhancement_options)
 
 
 if __name__ == '__main__':

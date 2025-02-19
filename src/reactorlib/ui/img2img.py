@@ -29,7 +29,10 @@ def operate(
             restore_face_only=kwargs.get("restore_face_only", False),
             face_detection_options=DetectionOptions(
                 det_thresh=0.25,
-                det_maxnum=0
+                det_maxnum=0,
+                mask_size=-1,
+                mask_blur_kernel=33,
+                mask_from_source=True
             )
         ),
     )

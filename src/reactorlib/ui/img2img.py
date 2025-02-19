@@ -125,9 +125,7 @@ def main():
         with gr.Row():  # Create a row for the inputs
             source_image = gr.Image(type="pil", label="Source Image", width=300, height=400)
             target_image = gr.Image(type="pil", label="Target Image", width=300, height=400)
-
-        gr.Markdown("### Results")
-        result = gr.Image(label="Result")
+            result = gr.Image(label="Result", width=300, height=400)
 
         inputs = {
             "det_thresh": det_thresh,

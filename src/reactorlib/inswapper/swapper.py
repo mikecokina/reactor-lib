@@ -28,7 +28,10 @@ class INSwapper(object):
         self.input_std = 255.0
 
         if self.session is None:
-            self.session = onnxruntime.InferenceSession(self.model_file, None)
+            self.session = onnxruntime.InferenceSession(
+                self.model_file,
+                providers=settings.PROVIDERS
+            )
 
         inputs = self.session.get_inputs()
         self.input_names = []

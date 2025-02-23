@@ -19,7 +19,7 @@ from . import shared, settings, images, face_analyzer
 from .entities.face import FaceArea
 from .entities.rect import Rect
 
-from .conf.settings import EnhancementOptions, DetectionOptions
+from .conf.settings import EnhancementOptions
 from .shared import bbox_percentage
 
 

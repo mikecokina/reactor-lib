@@ -141,7 +141,7 @@ def get_insightface_models(models_path: str):
     return models_
 
 
-def listdir(directory: str, filter_ext: List = None):
+def listdir(directory: str, filter_ext: List = None) -> List[str]:
     if filter_ext is not None:
         filter_ext = set(filter_ext)
 

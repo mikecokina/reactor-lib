@@ -24,9 +24,8 @@ class RealESRGANer(object):
             tile_pad=10,
             pre_pad=10,
             half=False,
-            face_restoration_model_download_name: str = settings.IMAGE_RESTORATION_MODEL_DOWNLOAD_NAME,
-            image_restoration_model_url: str = settings.IMAGE_RESTORATION_MODEL_URL,
-            image_restoration_model_download_name: str = settings.IMAGE_RESTORATION_MODEL_DOWNLOAD_NAME
+            model_url: str = settings.IMAGE_RESTORATION_MODEL_URL,
+            model_download_name: str = settings.IMAGE_RESTORATION_MODEL_DOWNLOAD_NAME
     ):
         self.model_path = model_path
 
@@ -46,7 +45,7 @@ class RealESRGANer(object):
         # Customized from xinntao
         self.device = settings.DEVICE
         self.gpu_id = settings.DEVICE_ID
-        self.model_file = os.path.join(self.model_path, face_restoration_model_download_name)
+        self.model_file = os.path.join(self.model_path, model_download_name)
 
         # initialize model
         if self.gpu_id:
@@ -56,9 +55,9 @@ class RealESRGANer(object):
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') \
                 if self.device is None else self.device
 
-        model_path_ = os.path.join(self.model_path, image_restoration_model_download_name)
+        model_path_ = os.path.join(self.model_path, model_download_name)
         if not os.path.isfile(model_path_):
-            download_model(model_path_, image_restoration_model_url)
+            download_model(model_path_, model_url)
 
         loadnet = torch.load(self.model_file, map_location=torch.device('cpu'))
 

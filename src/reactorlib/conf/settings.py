@@ -159,9 +159,7 @@ class _Const(object):
     FACE_RESTORATION_MODEL_DOWNLOAD_NAME = "codeformer-v0.1.0.pth"
 
     IMAGE_RESTORATION_MODEL: str = "RealESRGAN"
-    "https://huggingface.co/ai-forever/Real-ESRGAN/resolve/main/RealESRGAN_x2.pth"
-    IMAGE_RESTORATION_MODEL_URL = "https://github.com/xinntao/Real-ESRGAN/" \
-                                  "releases/download/v0.2.1/RealESRGAN_x2plus.pth"
+    IMAGE_RESTORATION_MODEL_URL = "https://huggingface.co/mikestealth/RealESRGAN/resolve/main/RealESRGAN_x2.pth"
     IMAGE_RESTORATION_MODEL_DOWNLOAD_NAME = "RealESRGAN_x2.pth"
 
     COLORS = [

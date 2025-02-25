@@ -1,12 +1,10 @@
-# TODO: merge with realesrgan or get rid of it
 import os
 from abc import abstractmethod
-from typing import Union
 
-import PIL
+import numpy as np
 from PIL import Image
 
-from .conf.settings import settings
+from .conf.settings import settings, ImageUpscalerOptions
 
 # noinspection PyUnresolvedReferences
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
@@ -14,135 +12,136 @@ LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.L
 NEAREST = (Image.Resampling.NEAREST if hasattr(Image, 'Resampling') else Image.NEAREST)
 
 
-class Upscaler:
+class Upscaler(object):
     name = None
-    model_path = None
-    model_name = None
-    model_url = None
-    enable = True
-    filter = None
-    model = None
-    user_path = None
-    scalers: list
-    tile = True
 
-    def __init__(self, create_dirs=False):
-        self.mod_pad_h = None
-        self.tile_size = 192
-        self.tile_pad = 8
-        self.device = settings.device
-        self.img = None
-        self.output = None
-        self.scale = 1
-        self.half = not settings.NO_HALF
-        self.pre_pad = 0
-        self.mod_scale = None
-        self.model_download_path = None
+    def __init__(self, options: ImageUpscalerOptions):
+        self.upscaler = None
 
-        if self.model_path is None and self.name:
-            self.model_path = os.path.join(settings.MODELS_PATH, self.name)
-        if self.model_path and create_dirs:
-            os.makedirs(self.model_path, exist_ok=True)
+        self.scale = options.scale
+        self.tile = options.tile
+        self.tile_pad = options.tile_pad
 
-        # noinspection PyBroadException
-        try:
-            import cv2  # noqa: F401
-            self.can_tile = True
-        except Exception:
-            pass
+        self.load_model()
 
     @abstractmethod
-    def do_upscale(self, img: PIL.Image, selected_model: str):
-        return img
-
-    def upscale(self, img: PIL.Image, scale, selected_model: str = None):
-        self.scale = scale
-        dest_w = int((img.width * scale) // 8 * 8)
-        dest_h = int((img.height * scale) // 8 * 8)
-
-        for _ in range(3):
-            if img.width >= dest_w and img.height >= dest_h and scale != 1:
-                break
-
-            shape = (img.width, img.height)
-
-            img = self.do_upscale(img, selected_model)
-
-            if shape == (img.width, img.height):
-                break
-
-        if img.width != dest_w or img.height != dest_h:
-            img = img.resize((int(dest_w), int(dest_h)), resample=LANCZOS)
-
-        return img
+    def upscale(self, image: Image.Image) -> Image.Image:
+        return image
 
     @abstractmethod
-    def load_model(self, path: str):
+    def _validate_scale(self, scale: int) -> bool:
         pass
 
-
-class UpscalerData:
-    name = None
-    data_path = None
-    scale: int = 4
-    scaler: Upscaler = None
-    model: None
-
-    def __init__(self, name: str, path: Union[str, None], upscaler: Upscaler = None, scale: int = 4, model=None):
-        self.name = name
-        self.data_path = path
-        self.local_data_path = path
-        self.scaler = upscaler
-        self.scale = scale
-        self.model = model
-
-    def __repr__(self):
-        return f"<UpscalerData name={self.name} path={self.data_path} scale={self.scale}>"
+    @abstractmethod
+    def load_model(self):
+        pass
 
 
 class UpscalerNone(Upscaler):
     name = "None"
-    scalers = []
 
-    def load_model(self, path):
+    def _validate_scale(self, scale: int) -> bool:
+        return True
+
+    def load_model(self):
         pass
 
-    def do_upscale(self, img, selected_model=None):
-        return img
-
-    # noinspection PyUnusedLocal
-    def __init__(self, dirname=None):
-        super().__init__(False)
-        self.scalers = [UpscalerData("None", None, self)]
+    def upscale(self, image) -> Image.Image:
+        return image
 
 
 class UpscalerLanczos(Upscaler):
-    scalers = []
+    name = "Lanczos"
 
-    def do_upscale(self, img, selected_model=None):
-        return img.resize((int(img.width * self.scale), int(img.height * self.scale)), resample=LANCZOS)
+    def _validate_scale(self, scale: int) -> bool:
+        return True
 
-    def load_model(self, _):
+    def upscale(self, image: Image.Image):
+        return image.resize((int(image.width * self.scale), int(image.height * self.scale)), resample=LANCZOS)
+
+    def load_model(self):
         pass
-
-    # noinspection PyUnusedLocal
-    def __init__(self, dirname=None):
-        super().__init__(False)
-        self.name = "Lanczos"
-        self.scalers = [UpscalerData("Lanczos", None, self)]
 
 
 class UpscalerNearest(Upscaler):
-    scalers = []
+    name = "Nearest"
 
-    def do_upscale(self, img, selected_model=None):
-        return img.resize((int(img.width * self.scale), int(img.height * self.scale)), resample=NEAREST)
+    def _validate_scale(self, scale: int) -> bool:
+        return True
 
-    def load_model(self, _):
+    def upscale(self, image: Image.Image):
+        image = super().upscale(image)
+        return image.resize((int(image.width * self.scale), int(image.height * self.scale)), resample=NEAREST)
+
+    def load_model(self):
         pass
 
-    # noinspection PyUnusedLocal
-    def __init__(self, dirname=None):
-        super().__init__(False)
-        self.name = "Nearest"
-        self.scalers = [UpscalerData("Nearest", None, self)]
+
+class UpscalerRealESRGAN(Upscaler):
+    def __init__(self, options: ImageUpscalerOptions):
+        self.pre_pad = 0
+
+        self._validate_scale(options.scale)
+        super().__init__(options)
+
+    def load_model(self):
+        from spandrel.architectures.RealESRGAN.arch.RRDBNet import RRDBNet
+        from .realsergan.realesrgan_model import RealESRGANer
+
+        model = RRDBNet(
+            num_in_ch=3,
+            num_out_ch=3,
+            num_feat=64,
+            num_block=23,
+            num_grow_ch=32,
+            scale=self.scale
+        )
+
+        upscaler = RealESRGANer(
+            scale=self.scale,
+            net=model,
+            tile=self.tile,
+            tile_pad=self.tile_pad,
+            pre_pad=self.pre_pad,
+            half=False
+        )
+        self.upscaler = upscaler
+
+    def upscale(self, image: Image.Image) -> Image.Image:
+        img, mode = self.upscaler.enhance(img=np.array(image, dtype=np.uint8))
+        return Image.fromarray(img).convert(mode)
+
+    def _validate_scale(self, scale: int) -> bool:
+        if scale not in (2, 4):
+            raise ValueError(f"Scale must be 2 or 4 for RealESRGAN model")
+        return True
+
+
+class UpscalerSwinIRSmall(Upscaler):
+    def __init__(self, options: ImageUpscalerOptions):
+        self._validate_scale(options.scale)
+        super().__init__(options)
+
+    def load_model(self):
+        from reactorlib.swinir.swinir_model import SwinIRRealSmall
+        self.upscaler = SwinIRRealSmall(tile=self.tile, tile_pad=self.tile_pad)
+
+    def upscale(self, image: Image.Image) -> Image.Image:
+        return self.upscaler.upscale_4x(image)
+
+    def _validate_scale(self, scale: int) -> bool:
+        # todo: rethink this validators, use name of class like _4x or so?
+        # todo: default SwinIR upsacle is hardcoded to 4 anyway
+        return True
+
+
+class UpscalerSwinIRLarge(Upscaler):
+    def load_model(self):
+        from reactorlib.swinir.swinir_model import SwinIRRealLarge
+        self.upscaler = SwinIRRealLarge(tile=self.tile, tile_pad=self.tile_pad,)
+
+    def upscale(self, image: Image.Image) -> Image.Image:
+        return self.upscaler.upscale_4x(image)
+
+    def _validate_scale(self, scale: int) -> bool:
+        return True

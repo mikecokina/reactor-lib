@@ -13,6 +13,7 @@ from insightface.utils import face_align
 
 from ..conf.settings import settings
 from ..conf.settings import FaceSwapper
+from ..shared import torch_gc
 
 
 class INSwapper(object):
@@ -187,6 +188,8 @@ class INSwapper(object):
             source_face: Face,
             paste_back=True,
     ) -> np.ndarray:
+        torch_gc()
+
         dim = 1
         if settings.FACE_SWAPPER == FaceSwapper.inswapper_256:
             dim = 2

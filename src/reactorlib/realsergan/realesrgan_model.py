@@ -7,28 +7,23 @@ import torch
 from PIL import Image
 from spandrel.architectures.RealESRGAN.arch.RRDBNet import RRDBNet
 
-from ..conf.settings import settings, ImageEnhancementOptions
+from ..conf.settings import settings, ImageUpscalerOptions, ImageUpsaclerModels, ImageUpscaler
 from torch.nn import functional as func
 
 from ..logger import logger
-from ..shared import download_model
+from ..shared import download_model, resolve_device
 
 
 class RealESRGANer(object):
     def __init__(
             self,
-            model_path,
             scale,
             net=None,
             tile=0,
             tile_pad=10,
             pre_pad=10,
             half=False,
-            model_url: str = settings.IMAGE_RESTORATION_MODEL_URL,
-            model_download_name: str = settings.IMAGE_RESTORATION_MODEL_DOWNLOAD_NAME
     ):
-        self.model_path = model_path
-
         #  Defaults
         self.mod_pad_h = None
         self.mod_pad_w = None
@@ -42,36 +37,40 @@ class RealESRGANer(object):
         self.mod_scale = None
         self.half = half
 
-        # Customized from xinntao
-        self.device = settings.DEVICE
-        self.gpu_id = settings.DEVICE_ID
-        self.model_file = os.path.join(self.model_path, model_download_name)
+        self.device = resolve_device(settings.device, settings.DEVICE_ID)
+        model_config = self._get_model_config(self.scale)
+        self.model_file = os.path.join(settings.REALESRGAN_MODEL_DIR, model_config.filename)
 
-        # initialize model
-        if self.gpu_id:
-            self.device = torch.device(f'cuda:{self.gpu_id}' if torch.cuda.is_available() else 'cpu') \
-                if self.device is None else self.device
-        else:
-            self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') \
-                if self.device is None else self.device
-
-        model_path_ = os.path.join(self.model_path, model_download_name)
-        if not os.path.isfile(model_path_):
-            download_model(model_path_, model_url)
+        if not os.path.isfile(self.model_file):
+            download_model(self.model_file, model_config.url)
 
         loadnet = torch.load(self.model_file, map_location=torch.device('cpu'))
 
         # prefer to use params_ema
         if 'params_ema' in loadnet:
-            keyname = 'params_ema'
+            params = loadnet['params_ema']
+        elif 'params' in loadnet:
+            params = loadnet['params']
         else:
-            keyname = 'params'
-        net.load_state_dict(loadnet[keyname], strict=True)
+            params = loadnet
+        net.load_state_dict(params, strict=True)
 
         net.eval()
         self.model = net.to(self.device)
         if self.half:
             self.model = self.model.half()
+
+    def _get_model_config(self, scale: int):
+        # Determine model path
+        # todo: implement 4x
+        if scale == 2:
+            model_config = ImageUpsaclerModels.get_config(ImageUpscaler.realesrgan_2x)
+        elif scale == 4:
+            model_config = ImageUpsaclerModels.get_config(ImageUpscaler.realesrgan_4x)
+        else:
+            raise NotImplementedError(f"RealESRGAN for scale {self.scale} not implemented")
+
+        return model_config
 
     @staticmethod
     def dni(net_a, net_b, dni_weight, key='params', loc='cpu'):
@@ -273,19 +272,14 @@ class RealESRGANer(object):
         return "RealESRGAN"
 
 
-class RealESRGANCache(object):
-    _instance = None
-
-
 def enhance_image(
         image: Image.Image,
-        image_enhancement_options: ImageEnhancementOptions,
+        image_enhancement_options: ImageUpscalerOptions,
 ) -> Image.Image:
 
     model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
     upscaler = RealESRGANer(
         scale=image_enhancement_options.scale,
-        model_path=settings.IMAGE_RESTORATION_MODEL_DIR,
         net=model,
         tile=image_enhancement_options.tile,
         tile_pad=image_enhancement_options.tile_pad,

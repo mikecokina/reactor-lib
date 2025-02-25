@@ -200,3 +200,15 @@ def bbox_percentage(x1, y1, x2, y2, w, h):
     # Calculate the percentage of the image covered by the bbox
     percentage = (bbox_area / image_area) * 100
     return percentage
+
+
+def resolve_device(device: str, gpu_id: Union[int, str] = None) -> str:
+    # todo: maybe better way is to put this directly to settings.device property
+
+    if gpu_id is not None:
+        device = torch.device(f'cuda:{gpu_id}' if torch.cuda.is_available() else 'cpu') \
+            if device is None else device
+    else:
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') \
+            if device is None else device
+    return device

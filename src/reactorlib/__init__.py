@@ -10,7 +10,7 @@ from .conf.settings import (
     EnhancementOptions,
     DetectionOptions,
     FaceBlurOptions,
-    ImageEnhancementOptions,
+    ImageUpscalerOptions,
     FaceEnhancementOptions,
     FaceSwapper,
     FaceMasker

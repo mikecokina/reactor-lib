@@ -4,7 +4,7 @@
 [![OS](https://img.shields.io/badge/os-Linux-magenta.svg)](https://www.gnu.org/gnu/linux-and-gnu.html)
 
 
-# reactor-lib
+#  FaceSwap-X (formerly reactor-lib)
 
 The face swap python library based on sd-webui-reactor extension
 
@@ -19,6 +19,8 @@ The face swap python library based on sd-webui-reactor extension
 - *inswapper*: https://github.com/haofanwang/inswapper
 - *ReSwapper*: https://github.com/somanchiu/ReSwapper
 - *BiRefNet*: https://github.com/ZhengPeng7/BiRefNet
+- *RealESRGAN*: https://github.com/xinntao/Real-ESRGAN
+- *SwinIR*: https://github.com/JingyunLiang/SwinIR
 
 ## Examples
 
@@ -78,7 +80,7 @@ def main():
         'DEVICE': 'CUDA',
         # "MODELS_PATH": "/absolute/path/to/models/directory",
         "FACE_SWAPPER": FaceSwapper.reswapper_256_1567500,
-        "FACE_MASKER": FaceMasker.birefnet_L
+        "FACE_MASKER": FaceMasker.birefnet_large
     })
 
     enhancement_options = EnhancementOptions(
@@ -263,6 +265,40 @@ if __name__ == '__main__':
 ```
 
 Models are downloaded automatically. Approximately 1.5 GB of free space is required.
+
+## Example of image upscalers
+```python
+import PIL.Image
+from reactorlib import settings, ImageUpscalerOptions
+from reactorlib.upscalers import (
+    UpscalerNone, UpscalerLanczos, UpscalerNearest, 
+    UpscalerRealESRGAN, UpscalerSwinIRSmall, UpscalerSwinIRLarge
+)
+
+settings.configure(**{
+    "DEVICE": "cuda"
+})
+
+
+def main():
+    # For RealESRGAN scale 2 or 4 is accepted
+    # For SwinIR any scale is accepted, but 4 is actually used
+    options = ImageUpscalerOptions(scale=4, tile=32, tile_pad=32)
+    image = PIL.Image.open("</path/to/image.ext>")
+    
+    # processor = UpscalerNone(options)
+    # processor = UpscalerLanczos(options)
+    # processor = UpscalerNearest(options)
+    # processor = UpscalerRealESRGAN(options)
+    # processor = UpscalerSwinIRLarge(options)
+    
+    processor = UpscalerSwinIRSmall(options)
+    result = processor.upscale(image)
+
+
+if __name__ == '__main__':
+    main()
+```
 
 
 # Disclaimer

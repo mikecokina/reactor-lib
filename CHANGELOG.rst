@@ -10,7 +10,11 @@ v0.1.dev0_
 **Release date:** 2024-##-##
 
 **Features**
-
+    - Image Upsaclers
+        - RealESRGAN x2
+        - RealESRGAN x4
+        - SwinIR Real x4
+        - SwinIR Real Large x4
 
 * **Supported**
     - Image-to-Image Face Swap

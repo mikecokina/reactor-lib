@@ -1,8 +1,8 @@
-import enum
 import json
 import os
 import os.path as op
 from dataclasses import dataclass, field
+from enum import Enum
 
 from logging import config as log_conf
 
@@ -18,9 +18,7 @@ class DetectionOptions:
 
 
 @dataclass
-class ImageEnhancementOptions:
-    do_enhancement: bool = True
-
+class ImageUpscalerOptions:
     scale: int = 2
     tile: int = 400
     tile_pad: int = 10
@@ -44,7 +42,7 @@ class FaceEnhancementOptions:
 @dataclass
 class EnhancementOptions:
     face_enhancement_options: FaceEnhancementOptions = field(default_factory=FaceEnhancementOptions)
-    image_enhancement_options: ImageEnhancementOptions = field(default_factory=ImageEnhancementOptions)
+    image_enhancement_options: ImageUpscalerOptions = field(default_factory=ImageUpscalerOptions)
 
 
 @dataclass
@@ -59,7 +57,7 @@ class FaceBlurOptions:
     mask_size: int = 0
 
 
-class FaceSwapper(enum.Enum):
+class FaceSwapper(Enum):
     inswapper_128 = 'inswapper_128'
     inswapper_256 = 'inswapper_256'
     inswapper_512 = 'inswapper_512'
@@ -89,12 +87,12 @@ class FaceMaskModelOption:
 
 class FaceMaskModels(object):
     _config = {
-        FaceMasker.birefnet_L.value: FaceMaskModelOption(
+        FaceMasker.birefnet_large.value: FaceMaskModelOption(
             filename="birefnet-lapa-face-epoch_20--swin-v1-large.onnx",
             url="https://huggingface.co/mikestealth/birefnet/resolve/main/"
                 "birefnet-lapa-face-epoch_20--swin-v1-large.onnx"
         ),
-        FaceMasker.birefnet_T.value: FaceMaskModelOption(
+        FaceMasker.birefnet_tiny.value: FaceMaskModelOption(
             filename="birefnet-lapa-face-epoch_20--swin-v1-tiny.onnx",
             url="https://huggingface.co/mikestealth/birefnet/resolve/main/"
                 "birefnet-lapa-face-epoch_20--swin-v1-tiny.onnx"
@@ -112,41 +110,71 @@ class FaceMaskModels(object):
 
 
 @dataclass
-class FaceSwapperModelOptions:
+class ModelOptions:
     filename: str
     url: str
 
 
+class ImageUpsaclerModels(object):
+    _config = {
+        ImageUpscaler.realesrgan_2x.value: ModelOptions(
+            filename="RealESRGAN_x2.pth",
+            url="https://huggingface.co/mikestealth/RealESRGAN/resolve/main/RealESRGAN_x2.pth"
+        ),
+        ImageUpscaler.realesrgan_4x.value: ModelOptions(
+            filename="RealESRGAN_x4.pth",
+            url="https://huggingface.co/mikestealth/RealESRGAN/resolve/main/RealESRGAN_x4.pth"
+        ),
+        ImageUpscaler.swinir_real_sr.value: ModelOptions(
+            filename="003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth",
+            url="https://huggingface.co/mikestealth/SwinIR/resolve/main/"
+                "003_realSR_BSRGAN_DFO_s64w8_SwinIR-M_x4_GAN.pth?download=true"
+        ),
+        ImageUpscaler.swinir_real_sr_large.value: ModelOptions(
+            filename="003_realSR_BSRGAN_DFOWMFC_s64w8_SwinIR-L_x4_GAN.pth",
+            url="https://huggingface.co/mikestealth/SwinIR/resolve/main/"
+                "003_realSR_BSRGAN_DFOWMFC_s64w8_SwinIR-L_x4_GAN.pth"
+        ),
+
+    }
+
+    @classmethod
+    def get_config(cls, upscaler: ImageUpscaler) -> ModelOptions:
+        if upscaler.value in cls._config:
+            return cls._config[upscaler.value]
+        raise AttributeError(f"No such upscaler {upscaler.value}")
+
+
 class FaceSwapperModels(object):
     _config = {
-        FaceSwapper.inswapper_128.value: FaceSwapperModelOptions(
+        FaceSwapper.inswapper_128.value: ModelOptions(
             filename="inswapper_128.onnx",
             url="https://huggingface.co/mikestealth/inswapper/resolve/main/inswapper_128.onnx"
         ),
-        FaceSwapper.inswapper_256.value: FaceSwapperModelOptions(
+        FaceSwapper.inswapper_256.value: ModelOptions(
             filename="inswapper_128.onnx",
             url="https://huggingface.co/mikestealth/inswapper/resolve/main/inswapper_128.onnx"
         ),
-        FaceSwapper.inswapper_512.value: FaceSwapperModelOptions(
+        FaceSwapper.inswapper_512.value: ModelOptions(
             filename="inswapper_128.onnx",
             url="https://huggingface.co/mikestealth/inswapper/resolve/main/inswapper_128.onnx"
         ),
-        FaceSwapper.reswapper_128.value: FaceSwapperModelOptions(
+        FaceSwapper.reswapper_128.value: ModelOptions(
             filename="reswapper_128-1019500-newarch.pth",
             url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_128-1019500-newarch.pth"
         ),
-        FaceSwapper.reswapper_256.value: FaceSwapperModelOptions(
+        FaceSwapper.reswapper_256.value: ModelOptions(
             filename="reswapper_256-1399500-newarch.pth",
             url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_256-1399500-newarch.pth"
         ),
-        FaceSwapper.reswapper_256_1567500.value: FaceSwapperModelOptions(
+        FaceSwapper.reswapper_256_1567500.value: ModelOptions(
             filename="reswapper_256-1567500-newarch.pth",
             url="https://huggingface.co/mikestealth/reswapper/resolve/main/reswapper_256-1567500-newarch.pth"
         )
     }
 
     @classmethod
-    def get_config(cls, face_swapper: FaceSwapper) -> FaceSwapperModelOptions:
+    def get_config(cls, face_swapper: FaceSwapper) -> ModelOptions:
         if face_swapper.value in cls._config:
             return cls._config[face_swapper.value]
         raise AttributeError(f"No such model {face_swapper.value}")
@@ -164,10 +192,6 @@ class _Const(object):
     FACE_RESTORATION_MODEL: str = "CodeFormer"
     FACE_RESTORATION_MODEL_URL = "https://github.com/sczhou/CodeFormer/releases/download/v0.1.0/codeformer.pth"
     FACE_RESTORATION_MODEL_DOWNLOAD_NAME = "codeformer-v0.1.0.pth"
-
-    IMAGE_RESTORATION_MODEL: str = "RealESRGAN"
-    IMAGE_RESTORATION_MODEL_URL = "https://huggingface.co/mikestealth/RealESRGAN/resolve/main/RealESRGAN_x2.pth"
-    IMAGE_RESTORATION_MODEL_DOWNLOAD_NAME = "RealESRGAN_x2.pth"
 
     COLORS = [
         (255, 0, 0),
@@ -197,8 +221,9 @@ class DefaultSettings(object):
     )
     NO_HALF: bool = True
     FACE_RESTORATION_MODEL_DIR: str = os.path.join(MODELS_PATH, 'codeformer')
-    IMAGE_RESTORATION_MODEL_DIR: str = os.path.join(MODELS_PATH, 'realesrgan')
-    BIREFNET_MODEL_DIR: str = os.path.join(MODELS_PATH, "birefnet")
+    REALESRGAN_MODEL_DIR: str = os.path.join(MODELS_PATH, 'realesrgan')
+    SWINIR_MODEL_DIR: str = os.path.join(MODELS_PATH, 'swinir')
+    BIREFNET_MODEL_DIR: str = os.path.join(MODELS_PATH, 'birefnet')
 
     PROVIDERS = ["CPUExecutionProvider"]
 
@@ -260,14 +285,15 @@ class Settings(_Const, DefaultSettings):
                     cls.PROVIDERS = ["CPUExecutionProvider"]
             if key == 'MODELS_PATH':
                 cls.FACE_RESTORATION_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'codeformer')
-                cls.IMAGE_RESTORATION_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'realesrgan')
                 cls.BIREFNET_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'birefnet')
+                cls.SWINIR_MODEL_DIR: str = os.path.join(cls.MODELS_PATH, 'swinir')
+                cls.REALESRGAN_MODEL_DIR: str = os.path.join(cls.MODELS_PATH, 'realesrgan')
 
             if key == 'FACE_SWAPPER':
                 if not isinstance(value, FaceSwapper):
                     raise ValueError("FACE_SWAPPER value have to be a value of FaceSwapper enum")
                 cls.FACE_SWAPPER = value
-                model_config: FaceSwapperModelOptions = FaceSwapperModels.get_config(value)
+                model_config: ModelOptions = FaceSwapperModels.get_config(value)
                 cls.FACE_SWAPPER_MODEL_DOWNLOAD_NAME = model_config.filename
                 cls.FACE_SWAPPER_MODEL_URL = model_config.url
 

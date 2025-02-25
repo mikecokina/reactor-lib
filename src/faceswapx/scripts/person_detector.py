@@ -7,9 +7,9 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 
-from reactorlib.nudity import nude_detector_cache
-from reactorlib.scripts.object_detection import get_object_detection_res, YOLO_PERSON_STR
-from reactorlib.shared import listdir
+from faceswapx.nudity import nude_detector_cache
+from faceswapx.scripts.object_detection import get_object_detection_res, YOLO_PERSON_STR
+from faceswapx.shared import listdir
 
 
 class Gender(Enum):

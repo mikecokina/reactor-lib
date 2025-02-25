@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 from skimage import transform as trans
 
-from reactorlib.shared import get_warp_affine_border_value
+from faceswapx.shared import get_warp_affine_border_value
 
 arcface_dst = np.array(
     [

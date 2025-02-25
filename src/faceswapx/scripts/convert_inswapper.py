@@ -1,5 +1,5 @@
 import torch
-from reactorlib.reswapper.stf_128 import StyleTransferModel
+from faceswapx.reswapper.stf_128 import StyleTransferModel
 
 import onnx
 from onnx import numpy_helper

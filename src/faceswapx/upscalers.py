@@ -123,7 +123,7 @@ class UpscalerSwinIRSmall(Upscaler):
         super().__init__(options)
 
     def load_model(self):
-        from reactorlib.swinir.swinir_model import SwinIRRealSmall
+        from faceswapx.swinir.swinir_model import SwinIRRealSmall
         self.upscaler = SwinIRRealSmall(tile=self.tile, tile_pad=self.tile_pad)
 
     def upscale(self, image: Image.Image) -> Image.Image:
@@ -137,7 +137,7 @@ class UpscalerSwinIRSmall(Upscaler):
 
 class UpscalerSwinIRLarge(Upscaler):
     def load_model(self):
-        from reactorlib.swinir.swinir_model import SwinIRRealLarge
+        from faceswapx.swinir.swinir_model import SwinIRRealLarge
         self.upscaler = SwinIRRealLarge(tile=self.tile, tile_pad=self.tile_pad,)
 
     def upscale(self, image: Image.Image) -> Image.Image:

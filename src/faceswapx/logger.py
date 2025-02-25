@@ -22,7 +22,7 @@ class CustomLogger(object):
     _instance = None
 
     SUPPRESS_LOGGER: bool = False
-    LOGGER = getLogger('reactorlib', suppress=SUPPRESS_LOGGER)
+    LOGGER = getLogger('faceswapx', suppress=SUPPRESS_LOGGER)
 
     def __new__(cls):
         if cls._instance is None:
@@ -41,7 +41,7 @@ class CustomLogger(object):
             setattr(cls, key, value)
 
             if key == 'SUPPRESS_LOGGER':
-                cls.LOGGER = getLogger('reactorlib', suppress=cls.SUPPRESS_LOGGER)
+                cls.LOGGER = getLogger('faceswapx', suppress=cls.SUPPRESS_LOGGER)
 
     @property
     def logger(self):

@@ -1,9 +1,9 @@
 import os.path
 from pathlib import Path
 from PIL import Image
-from reactorlib.codeformer.codeformer_model import enhance_image
+from faceswapx.codeformer.codeformer_model import enhance_image
 
-from reactorlib import settings, FaceEnhancementOptions, EnhancementOptions, DetectionOptions
+from faceswapx import settings, FaceEnhancementOptions, EnhancementOptions, DetectionOptions
 
 IMAGE_EXTENSIONS = ('.webp', '.png', '.jpg', '.jpeg', '.gif', '.bmp')
 

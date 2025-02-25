@@ -1,5 +1,5 @@
 import torch
-from reactorlib.reswapper.stf_128 import StyleTransferModel
+from faceswapx.reswapper.stf_128 import StyleTransferModel
 
 path = "reswapper_256-1399500.pth"
 transfer_weights = torch.load(path)

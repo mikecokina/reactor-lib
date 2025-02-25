@@ -7,7 +7,7 @@ from pathlib import Path
 import gradio as gr
 from PIL import Image
 
-from reactorlib import (
+from faceswapx import (
     swap,
     EnhancementOptions,
     FaceEnhancementOptions,
@@ -16,9 +16,9 @@ from reactorlib import (
     FaceMasker,
     settings, FaceBlurOptions
 )
-from reactorlib.react import _bulk
-from reactorlib.shared import torch_gc
-from reactorlib.video.utils import video2frames, frames2video
+from faceswapx.react import _bulk
+from faceswapx.shared import torch_gc
+from faceswapx.video.utils import video2frames, frames2video
 
 IS_RUNNING = False
 
@@ -74,7 +74,7 @@ def operate(
         'DEVICE': device,
         "FACE_SWAPPER": face_swapper,
         "FACE_MASKER": face_masker,
-        "DISABLE_NSFW": os.environ.get("REACTORLIB_DISABLE_NSFW", True)
+        "DISABLE_NSFW": os.environ.get("FACESWAPX_DISABLE_NSFW", True)
     })
 
     # Logic

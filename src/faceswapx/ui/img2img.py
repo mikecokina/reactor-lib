@@ -3,7 +3,7 @@ import os
 import gradio as gr
 from PIL import Image
 
-from reactorlib import (
+from faceswapx import (
     swap,
     EnhancementOptions,
     FaceEnhancementOptions,
@@ -12,7 +12,7 @@ from reactorlib import (
     FaceMasker,
     settings
 )
-from reactorlib.shared import torch_gc
+from faceswapx.shared import torch_gc
 
 
 def operate(
@@ -52,7 +52,7 @@ def operate(
         'DEVICE': device,
         "FACE_SWAPPER": face_swapper,
         "FACE_MASKER": face_masker,
-        "DISABLE_NSFW": os.environ.get("REACTORLIB_DISABLE_NSFW", True)
+        "DISABLE_NSFW": os.environ.get("FACESWAPX_DISABLE_NSFW", True)
     })
 
     result_image, _ = swap(

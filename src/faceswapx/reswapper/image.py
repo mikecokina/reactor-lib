@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from insightface.app.common import Face
 
-from reactorlib.shared import get_warp_affine_border_value
+from faceswapx.shared import get_warp_affine_border_value
 
 emap = np.load(Path(os.path.dirname(__file__)) / "emap.npy")
 input_std = 255.0

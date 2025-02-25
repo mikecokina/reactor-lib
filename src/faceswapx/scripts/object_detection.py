@@ -5,8 +5,8 @@ import onnxruntime as ort
 import numpy as np
 import cv2
 
-from reactorlib import settings
-from reactorlib.shared import get_bytes_from_url
+from faceswapx import settings
+from faceswapx.shared import get_bytes_from_url
 
 YOLO_PERSON_STR = 'person'
 CONF_THRESHOLD = 0.25

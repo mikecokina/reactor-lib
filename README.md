@@ -4,9 +4,29 @@
 [![OS](https://img.shields.io/badge/os-Linux-magenta.svg)](https://www.gnu.org/gnu/linux-and-gnu.html)
 
 
-#  FaceSwap-X (formerly reactor-lib)
+#  FaceSwap-X
 
-The face swap python library based on sd-webui-reactor extension
+FaceSwap-X is a powerful Python library for face swapping, face enhancement, and image upscaling. It provides both a code-based API and a user-friendly UI built with Gradio for easy interaction.
+
+### ✨ Features 
+
+- Face Swapping
+
+    - Swap faces in images and videos.
+    - Supports `Inswapper` and `ReSwapper` for high-quality results.
+
+- Face Enhancement
+
+    - Enhance entire cropped face images or just the face region.
+    - Uses BiSeNet or BiRefNet for accurate face segmentation.
+
+- Image Upscaling
+    - Improve image quality with Real-ESRGAN or SwinIR.
+    
+- Flexible Usage
+
+    - Use via Python code for automation.
+    - Use via Gradio UI for an intuitive experience.
 
 ## Licence
 
@@ -69,7 +89,7 @@ Run it as a Python script. First, install `gradio==5.13.1`.
 ### Code
 
 ```python
-from reactorlib import (
+from faceswapx import (
     settings, swap, DetectionOptions, EnhancementOptions,
     FaceBlurOptions, FaceEnhancementOptions, FaceSwapper, FaceMasker
 )
@@ -126,7 +146,7 @@ if __name__ == "__main__":
 ## Example for batch processing from single source image
 
 ```python
-from reactorlib import settings, swap, DetectionOptions, EnhancementOptions, FaceBlurOptions, FaceEnhancementOptions
+from faceswapx import settings, swap, DetectionOptions, EnhancementOptions, FaceBlurOptions, FaceEnhancementOptions
 
 
 def main():
@@ -157,7 +177,6 @@ def main():
         noise_pixel_size=1
     )
 
-
     _, n_swapped = swap(
         source_image="/absolute/path/to/source/image.<ext>",
         target_faces_index=[0],
@@ -179,11 +198,13 @@ if __name__ == '__main__':
 ```
 
 ## Example of video processing
+
 ```python
-from reactorlib import (
-    settings, DetectionOptions, EnhancementOptions, 
+from faceswapx import (
+    settings, DetectionOptions, EnhancementOptions,
     FaceBlurOptions, FaceEnhancementOptions, video_swap
 )
+
 
 def main():
     settings.configure(**{
@@ -211,7 +232,7 @@ def main():
         blur_strength=0.2,
         noise_pixel_size=1
     )
-    
+
     video_swap(
         source_image="</path/to/image.ext>",
         target_video="</path/to/video.mp4>",
@@ -228,6 +249,7 @@ def main():
         desired_fps=25.0
     )
 
+
 if __name__ == '__main__':
     main()
 ```
@@ -236,7 +258,7 @@ if __name__ == '__main__':
 
 ```python
 import PIL.Image
-from reactorlib import EnhancementOptions, DetectionOptions, enhance_face, settings, FaceEnhancementOptions
+from faceswapx import EnhancementOptions, DetectionOptions, enhance_face, settings, FaceEnhancementOptions
 
 
 def main():
@@ -267,11 +289,12 @@ if __name__ == '__main__':
 Models are downloaded automatically. Approximately 1.5 GB of free space is required.
 
 ## Example of image upscalers
+
 ```python
 import PIL.Image
-from reactorlib import settings, ImageUpscalerOptions
-from reactorlib.upscalers import (
-    UpscalerNone, UpscalerLanczos, UpscalerNearest, 
+from faceswapx import settings, ImageUpscalerOptions
+from faceswapx.upscalers import (
+    UpscalerNone, UpscalerLanczos, UpscalerNearest,
     UpscalerRealESRGAN, UpscalerSwinIRSmall, UpscalerSwinIRLarge
 )
 
@@ -285,13 +308,13 @@ def main():
     # For SwinIR any scale is accepted, but 4 is actually used
     options = ImageUpscalerOptions(scale=4, tile=32, tile_pad=32)
     image = PIL.Image.open("</path/to/image.ext>")
-    
+
     # processor = UpscalerNone(options)
     # processor = UpscalerLanczos(options)
     # processor = UpscalerNearest(options)
     # processor = UpscalerRealESRGAN(options)
     # processor = UpscalerSwinIRLarge(options)
-    
+
     processor = UpscalerSwinIRSmall(options)
     result = processor.upscale(image)
 

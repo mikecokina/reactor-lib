@@ -5,8 +5,8 @@ import numpy as np
 from PIL import Image
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
 
-from reactorlib import DetectionOptions
-from reactorlib.restoration import get_face_mask
+from faceswapx import DetectionOptions
+from faceswapx.restoration import get_face_mask
 
 
 def mask_frame(

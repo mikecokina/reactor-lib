@@ -12,12 +12,12 @@ from PIL import Image
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
 from tqdm import tqdm
 
-from reactorlib import DetectionOptions, FaceMasker
-from reactorlib.conf.settings import settings
-from reactorlib.logger import suppress_output
-from reactorlib.scripts.face_mask import mask_frame
-from reactorlib.shared import listdir
-from reactorlib.utils import create_face_helper, get_face_analyser, get_landmarks_with_face_helper
+from faceswapx import DetectionOptions, FaceMasker
+from faceswapx.conf.settings import settings
+from faceswapx.logger import suppress_output
+from faceswapx.scripts.face_mask import mask_frame
+from faceswapx.shared import listdir
+from faceswapx.utils import create_face_helper, get_face_analyser, get_landmarks_with_face_helper
 
 
 def update_ema_matrix(
@@ -381,8 +381,8 @@ def main():
     )
 
     deflicker(
-        input_dir="",
-        output_dir="",
+        input_dir="/home/mike/Data/reels/174/bella/frames_out_1740345368",
+        output_dir="/home/mike/Data/reels/174/bella/deflicker",
         face_detection_options=face_detection_options,
         face_index=0,
     )

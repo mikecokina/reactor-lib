@@ -3,7 +3,6 @@
 import math
 import os
 from functools import partial
-from math import log2
 from pathlib import Path
 from typing import Optional, List, Iterable, Tuple, Union
 
@@ -16,10 +15,10 @@ import torch.nn.functional as func
 from einops import rearrange, repeat, reduce
 from einops.layers.torch import Rearrange
 
-from reactorlib.conf.settings import settings
-from reactorlib.shared import download_model
-
 from safetensors.torch import load_file
+
+from ..conf.settings import settings
+from ..shared import download_model
 
 
 def get_same_padding(size, kernel, dilation, stride):
@@ -164,7 +163,7 @@ def identity(t, *args, **kwargs):
 
 
 def is_power_of_two(n):
-    return log2(n).is_integer()
+    return math.log2(n).is_integer()
 
 
 def null_iterator():
@@ -585,8 +584,8 @@ class UnetUpsampler(torch.nn.Module):
 
     @property
     def allowable_rgb_resolutions(self):
-        input_res_base = int(log2(self.input_image_size))
-        output_res_base = int(log2(self.image_size))
+        input_res_base = int(math.log2(self.input_image_size))
+        output_res_base = int(math.log2(self.image_size))
         allowed_rgb_res_base = list(range(input_res_base, output_res_base))
         return [*map(lambda p: 2 ** p, allowed_rgb_res_base)]
 

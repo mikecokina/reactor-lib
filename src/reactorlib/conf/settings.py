@@ -68,10 +68,17 @@ class FaceSwapper(enum.Enum):
     reswapper_256_1567500 = 'reswapper_256_1567500'
 
 
-class FaceMasker(enum.Enum):
+class FaceMasker(Enum):
     bisenet = "bisenet"
-    birefnet_L = "birefnet_L"
-    birefnet_T = "birefnet_T"
+    birefnet_large = "birefnet_large"
+    birefnet_tiny = "birefnet_tiny"
+
+
+class ImageUpscaler(Enum):
+    realesrgan_2x = "realesrgan_2x"
+    realesrgan_4x = "realesrgan_4x"
+    swinir_real_sr = "swinir_real_sr"
+    swinir_real_sr_large = "swinir_real_sr_large"
 
 
 @dataclass

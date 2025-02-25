@@ -29,7 +29,7 @@ def get_hair_masker_from_cache() -> BisenetCache:
 
 def get_face_masker_from_cache() -> MaskerCache:
     if (masker_cache.model is None) or (masker_cache.key != settings.FACE_MASKER.value):
-        if settings.FACE_MASKER in [FaceMasker.birefnet_L, FaceMasker.birefnet_T]:
+        if settings.FACE_MASKER in [FaceMasker.birefnet_large, FaceMasker.birefnet_tiny]:
             masker_cache.model = BiRefNetMaskGenerator()
         elif settings.FACE_MASKER == FaceMasker.bisenet:
             masker_cache.model = BiSeNetMaskGenerator()

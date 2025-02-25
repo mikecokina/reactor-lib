@@ -18,7 +18,7 @@ class BiRefNetMaskGenerator(MaskGeneratorMixin):
     def __init__(self) -> None:
         self._image_size = 512
 
-        face_masker_options = FaceMaskModels.get_config(FaceMasker.birefnet_L)
+        face_masker_options = FaceMaskModels.get_config(FaceMasker.birefnet_large)
         self.model_path = os.path.join(settings.BIREFNET_MODEL_DIR, face_masker_options.filename)
 
         if not os.path.exists(self.model_path):

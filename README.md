@@ -4,7 +4,7 @@
 [![OS](https://img.shields.io/badge/os-Linux-magenta.svg)](https://www.gnu.org/gnu/linux-and-gnu.html)
 
 
-#  FaceSwap-X
+# <img src="assets/logo.svg" width="150" align="middle"> FaceSwap-X
 
 FaceSwap-X is a powerful Python library for face swapping, face enhancement, and image upscaling. It provides both a code-based API and a user-friendly UI built with Gradio for easy interaction.
 

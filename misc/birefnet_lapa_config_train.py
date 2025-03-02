@@ -16,7 +16,7 @@ class Config(object):
 
         # TASK settings
         # self.task = ['DIS5K', 'COD', 'HRSOD', 'General', 'General-2K', 'Matting'][0]
-        self.task = 'FaceParsing'
+        self.task = 'HairParsing'
 
         # self.testsets = {
         #     # Benchmarks
@@ -30,7 +30,7 @@ class Config(object):
         # }[self.task]
         # datasets_all = '+'.join([ds for ds in (os.listdir(os.path.join(self.data_root_dir, self.task))
         # if os.path.isdir(os.path.join(self.data_root_dir, self.task)) else []) if ds not in self.testsets.split(',')])
-        self.testsets = 'LaPaTest,LaPaVal'
+        self.testsets = 'CelebAHQTest,CelebAHQVal'
 
         # self.training_set = {
         #     'DIS5K': ['DIS-TR', 'DIS-TR+DIS-TE1+DIS-TE2+DIS-TE3+DIS-TE4'][0],
@@ -41,7 +41,7 @@ class Config(object):
         #     'General-2K': datasets_all,
         #     'Matting': datasets_all,
         # }[self.task]
-        self.training_set = 'LaPaTrain'
+        self.training_set = 'CelebAHQTrain'
         self.prompt4loc = ['dense', 'sparse'][0]
 
         # Faster-Training settings

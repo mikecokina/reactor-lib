@@ -11,19 +11,25 @@ from torchvision import transforms
 
 from ..decorators import cpu_offload
 from .mixins import MaskGeneratorMixin
-from .. conf.settings import settings, FaceMasker, FaceMaskModels
 from .. shared import download_model
+
+from .. conf.settings import settings, FaceMasker, HairMasker, FaceMaskModels
 
 
 class BiRefNetMaskGenerator(MaskGeneratorMixin):
-    def __init__(self) -> None:
+    MASK_MODEL_CONFIG: Union[FaceMaskModels] = None
+
+    def __init__(
+            self,
+            model_type: Union[FaceMasker, HairMasker]
+    ) -> None:
         self._image_size = 512
 
-        face_masker_options = FaceMaskModels.get_config(FaceMasker.birefnet_large)
-        self.model_path = os.path.join(settings.BIREFNET_MODEL_DIR, face_masker_options.filename)
+        masker_options = self.MASK_MODEL_CONFIG.get_config(model_type)
+        self.model_path = os.path.join(settings.BIREFNET_MODEL_DIR, masker_options.filename)
 
         if not os.path.exists(self.model_path):
-            download_model(self.model_path, face_masker_options.url)
+            download_model(self.model_path, masker_options.url)
 
         self.mask_model: InferenceSession = self._initialize_model()
 
@@ -124,3 +130,7 @@ class BiRefNetMaskGenerator(MaskGeneratorMixin):
 
         # Return the mask as a NumPy array
         return np.array(mask).astype(np.uint8)
+
+
+class BiRefFaceNetMaskGenerator(BiRefNetMaskGenerator):
+    MASK_MODEL_CONFIG = FaceMaskModels

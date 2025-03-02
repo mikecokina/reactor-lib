@@ -1,6 +1,6 @@
 from ..conf.settings import FaceMasker, settings
 
-from .. inferencers.birefnet_mask_generator import BiRefNetMaskGenerator
+from .. inferencers.birefnet_mask_generator import BiRefFaceNetMaskGenerator
 from .. inferencers.bisenet_mask_generator import BiSeNetMaskGenerator
 
 from .. shared import SharedModelKeyMixin, SingletonBase
@@ -29,8 +29,10 @@ def get_hair_masker_from_cache() -> HairMaskerCache:
 
 def get_face_masker_from_cache() -> FaceMaskerCache:
     if (face_masker_cache.model is None) or (face_masker_cache.key != settings.FACE_MASKER.value):
-        if settings.FACE_MASKER in [FaceMasker.birefnet_large, FaceMasker.birefnet_tiny]:
-            face_masker_cache.model = BiRefNetMaskGenerator()
+        if settings.FACE_MASKER == FaceMasker.birefnet_large:
+            face_masker_cache.model = BiRefFaceNetMaskGenerator(model_type=FaceMasker.birefnet_large)
+        elif settings.FACE_MASKER == FaceMasker.birefnet_tiny:
+            face_masker_cache.model = BiRefFaceNetMaskGenerator(model_type=FaceMasker.birefnet_tiny)
         elif settings.FACE_MASKER == FaceMasker.bisenet:
             face_masker_cache.model = BiSeNetMaskGenerator()
         else:

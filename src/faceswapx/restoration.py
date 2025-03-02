@@ -58,6 +58,7 @@ def _get_mask(
             mask_size=detection_options.mask_size,
             use_minimal_area=False
         )
+
         if detection_options.mask_blur_kernel > 0:
             kernel = (detection_options.mask_blur_kernel, detection_options.mask_blur_kernel)
             # noinspection DuplicatedCode
@@ -159,7 +160,7 @@ def restore_with_face_helper(
                 cropped_mask_source = face_helper_mask.cropped_faces[face_index]
 
                 # Find face mask
-                hair_mask_arr = get_face_mask(
+                face_mask_arr = get_face_mask(
                     image=cropped_mask_source,
                     detection_options=face_detection_options
                 )
@@ -167,7 +168,7 @@ def restore_with_face_helper(
                 restored_face = np.array(Image.composite(
                     Image.fromarray(restored_face),
                     Image.fromarray(cropped_mask_source),
-                    Image.fromarray(hair_mask_arr).convert('L')
+                    Image.fromarray(face_mask_arr).convert('L')
                 ))
 
                 restored_faces[face_index] = restored_face

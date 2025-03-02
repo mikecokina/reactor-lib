@@ -79,6 +79,10 @@ class FaceMasker(Enum):
     birefnet_tiny = "birefnet_tiny"
 
 
+class HairMasker(Enum):
+    bisenet = "bisenet"
+
+
 class ImageUpscaler(Enum):
     realesrgan_2x = "realesrgan_2x"
     realesrgan_4x = "realesrgan_4x"
@@ -87,19 +91,19 @@ class ImageUpscaler(Enum):
 
 
 @dataclass
-class FaceMaskModelOption:
+class ModelOptions:
     filename: str
     url: str
 
 
 class FaceMaskModels(object):
     _config = {
-        FaceMasker.birefnet_large.value: FaceMaskModelOption(
+        FaceMasker.birefnet_large.value: ModelOptions(
             filename="birefnet-lapa-face-epoch_20--swin-v1-large.onnx",
             url="https://huggingface.co/mikestealth/birefnet/resolve/main/"
                 "birefnet-lapa-face-epoch_20--swin-v1-large.onnx"
         ),
-        FaceMasker.birefnet_tiny.value: FaceMaskModelOption(
+        FaceMasker.birefnet_tiny.value: ModelOptions(
             filename="birefnet-lapa-face-epoch_20--swin-v1-tiny.onnx",
             url="https://huggingface.co/mikestealth/birefnet/resolve/main/"
                 "birefnet-lapa-face-epoch_20--swin-v1-tiny.onnx"
@@ -107,19 +111,13 @@ class FaceMaskModels(object):
     }
 
     @classmethod
-    def get_config(cls, face_masker: FaceMasker) -> FaceMaskModelOption:
+    def get_config(cls, face_masker: FaceMasker) -> ModelOptions:
         if face_masker == FaceMasker.bisenet:
             raise NotImplementedError("Such combination is not allowed!")
 
         if face_masker.value in cls._config:
             return cls._config[face_masker.value]
         raise AttributeError(f"No such model {face_masker.value}")
-
-
-@dataclass
-class ModelOptions:
-    filename: str
-    url: str
 
 
 class ImageUpsaclerModels(object):

@@ -38,7 +38,7 @@ class FaceEnhancementOptions:
     codeformer_weight: float = 0.5
 
     restore_face_only: bool = False
-    paste_back_hairs: bool = False
+    paste_back_hair: bool = False
 
     face_size: int = 512
 

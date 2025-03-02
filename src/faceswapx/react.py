@@ -333,7 +333,7 @@ def operate(
         # Will use original image as masker for enhacements if mask_from_source enabled or hair paste back is required.
         # todo: maybe separete those 2 options and use original image for paste back of hair
         #  and mask source based on settings
-        use_original_as_mask = mask_from_source or enhancement_options.paste_back_hairs
+        use_original_as_mask = mask_from_source or enhancement_options.paste_back_hair
         enhance_image_kwargs = dict(**dict(np_mask=target_img[:, :, ::-1]) if use_original_as_mask else {})
 
         for _ in range(0, enhancement_options.face_enhancement_options.enhance_loops):

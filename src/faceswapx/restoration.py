@@ -104,7 +104,7 @@ def restore_with_face_helper(
     face_detection_options = face_enhancement_options.face_detection_options
     hair_detection_options = face_enhancement_options.hair_detection_options
     restore_face_only = enhancement_options.face_enhancement_options.restore_face_only
-    restore_original_hair = True
+    paste_back_hair = enhancement_options.face_enhancement_options.paste_back_hair
 
     try:
         # 1) Enhance faces.
@@ -173,7 +173,7 @@ def restore_with_face_helper(
                 restored_faces[face_index] = restored_face
 
         # 3) Replace hair from original image.
-        if restore_original_hair:
+        if paste_back_hair:
             logger.debug("Proessing hair")
 
             for face_index in range(0, len(restored_faces)):

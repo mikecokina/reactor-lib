@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from logging import config as log_conf
+from pathlib import Path
 
 
 @dataclass
@@ -32,11 +33,17 @@ class FaceEnhancementOptions:
     enhance_target: bool = False
     enhance_loops: int = 1
     scale: int = 1
+
     codeformer_visibility: float = 0.5
     codeformer_weight: float = 0.5
+
     restore_face_only: bool = False
+    paste_back_hairs: bool = False
+
     face_size: int = 512
+
     face_detection_options: DetectionOptions = field(default_factory=DetectionOptions)
+    hair_detection_options: DetectionOptions = field(default_factory=DetectionOptions)
 
 
 @dataclass
@@ -216,9 +223,9 @@ class DefaultSettings(object):
     SUPPRESS_LOGGER: bool = False
     DEVICE: str = 'cpu'
     DEVICE_ID: int | str = None
-    MODELS_PATH: str = os.path.join(
-        op.dirname(op.dirname(op.dirname(op.abspath(__file__)))), "data", "models"
-    )
+    CPU_OFFLOAD = False
+
+    MODELS_PATH: str = str(Path(op.abspath(__file__)).parent.parent.parent / "data" / "models")
     NO_HALF: bool = True
     FACE_RESTORATION_MODEL_DIR: str = os.path.join(MODELS_PATH, 'codeformer')
     REALESRGAN_MODEL_DIR: str = os.path.join(MODELS_PATH, 'realesrgan')
@@ -254,6 +261,7 @@ class Settings(_Const, DefaultSettings):
             "MODELS_PATH": cls.MODELS_PATH,
             "NO_HALF": cls.NO_HALF,
             "PROVIDERS": cls.PROVIDERS,
+            "CPU_OFFLOAD": cls.CPU_OFFLOAD,
         }
 
     @staticmethod
@@ -279,10 +287,10 @@ class Settings(_Const, DefaultSettings):
             if key == 'DEVICE':
                 setattr(cls, key, str(value).lower())
 
+                cls.PROVIDERS = ["CPUExecutionProvider"]
                 if cls.DEVICE == "cuda":
                     cls.PROVIDERS = ["CUDAExecutionProvider"]
-                else:
-                    cls.PROVIDERS = ["CPUExecutionProvider"]
+
             if key == 'MODELS_PATH':
                 cls.FACE_RESTORATION_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'codeformer')
                 cls.BIREFNET_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'birefnet')

@@ -9,6 +9,7 @@ from PIL import Image
 from onnxruntime import InferenceSession
 from torchvision import transforms
 
+from ..decorators import cpu_offload
 from .mixins import MaskGeneratorMixin
 from .. conf.settings import settings, FaceMasker, FaceMaskModels
 from .. shared import download_model
@@ -27,6 +28,22 @@ class BiRefNetMaskGenerator(MaskGeneratorMixin):
         self.mask_model: InferenceSession = self._initialize_model()
 
     @staticmethod
+    def name():
+        return "BiRefNet"
+
+    def get_device(self):
+        providers = self.mask_model.get_providers()
+        if "CUDAExecutionProvider" in providers:
+            return 'cuda'
+        return 'cpu'
+
+    def set_device(self, device: str):
+        if device == 'cuda':
+            self.mask_model.set_providers(["CUDAExecutionProvider"])
+        else:
+            self.mask_model.set_providers(["CPUExecutionProvider"])
+
+    @staticmethod
     def check_state_dict(state_dict, unwanted_prefixes=None):
         if unwanted_prefixes is not None:
             unwanted_prefixes = ['_orig_mod.', 'module.']
@@ -42,11 +59,8 @@ class BiRefNetMaskGenerator(MaskGeneratorMixin):
         onnx_session = onnxruntime.InferenceSession(self.model_path, providers=settings.PROVIDERS)
         return onnx_session
 
-    @staticmethod
-    def name():
-        return "BiRefNet"
-
     # noinspection DuplicatedCode,PyUnusedLocal
+    @cpu_offload
     def generate_mask(
             self,
             face_image: np.ndarray,

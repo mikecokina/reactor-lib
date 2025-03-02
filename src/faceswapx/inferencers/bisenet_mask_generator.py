@@ -8,9 +8,10 @@ from facexlib.parsing import init_parsing_model
 from facexlib.utils.misc import img2tensor
 from torchvision.transforms.functional import normalize
 
-from . mask_generator import MaskGenerator
+from .mask_generator import MaskGenerator
 from .mixins import MaskGeneratorMixin
-from .. import settings
+from ..conf.settings import settings
+from ..decorators import cpu_offload
 
 
 class BiSeNetMaskGenerator(MaskGenerator, MaskGeneratorMixin):
@@ -23,7 +24,18 @@ class BiSeNetMaskGenerator(MaskGenerator, MaskGeneratorMixin):
     def name(self):
         return "BiSeNet"
 
+    def get_device(self):
+        # todo: imlpement device id option
+        _device = next(self.mask_model.parameters()).device
+        device = _device.type
+        # index = _device.index
+        return device
+
+    def set_device(self, device: str):
+        self.mask_model.to(device)
+
     # noinspection PyMethodOverriding,DuplicatedCode
+    @cpu_offload
     def generate_mask(
             self,
             face_image: np.ndarray,
@@ -34,7 +46,6 @@ class BiSeNetMaskGenerator(MaskGenerator, MaskGeneratorMixin):
             fallback_ratio: float = 0.25,
             **kwargs,
     ) -> np.ndarray:
-        # original_face_image = face_image
         face_image = face_image.copy()
         face_image = face_image[:, :, ::-1]
 

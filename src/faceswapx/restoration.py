@@ -5,11 +5,12 @@ import os
 from functools import cached_property
 from typing import Callable, Union, List
 
-import PIL.Image
 import cv2
 import numpy as np
 import spandrel
 import torch
+
+from PIL import Image
 
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
 
@@ -57,9 +58,11 @@ def _get_mask(
             mask_size=detection_options.mask_size,
             use_minimal_area=False
         )
-        kernel = (detection_options.mask_blur_kernel, detection_options.mask_blur_kernel)
-        # noinspection DuplicatedCode
-        face_mask_arr = cv2.blur(face_mask_arr, kernel)
+        if detection_options.mask_blur_kernel > 0:
+            kernel = (detection_options.mask_blur_kernel, detection_options.mask_blur_kernel)
+            # noinspection DuplicatedCode
+            face_mask_arr = cv2.blur(face_mask_arr, kernel)
+
         larger_mask = cv2.resize(face_mask_arr, dsize=(face.width, face.height))
         entire_mask_image = np.zeros_like(np.array(image))
         entire_mask_image[face.top: face.bottom, face.left: face.right] = larger_mask
@@ -99,7 +102,9 @@ def restore_with_face_helper(
 
     face_enhancement_options = enhancement_options.face_enhancement_options
     face_detection_options = face_enhancement_options.face_detection_options
+    hair_detection_options = face_enhancement_options.hair_detection_options
     restore_face_only = enhancement_options.face_enhancement_options.restore_face_only
+    restore_original_hair = True
 
     try:
         # 1) Enhance faces.
@@ -112,7 +117,8 @@ def restore_with_face_helper(
         face_helper.get_face_landmarks_5(only_center_face=False, resize=640, eye_dist_threshold=5)
         face_helper.align_warp_face()
 
-        logger.debug(f"Found {str(len(face_helper.cropped_faces))} faces, restoring")
+        logger.debug(f"Found {str(len(face_helper.cropped_faces))} faces, restoring...")
+
         for cropped_face in face_helper.cropped_faces:
             cropped_face_t = images.bgr_image_to_rgb_tensor(cropped_face / 255.0)
             normalize(cropped_face_t, [0.5, 0.5, 0.5], [0.5, 0.5, 0.5], inplace=True)
@@ -131,39 +137,60 @@ def restore_with_face_helper(
 
             restored_faces.append(restored_face)
 
+        # Prepare face helper for further operations
+        if np_mask is not None:
+            np_mask = np_mask[:, :, ::-1]
+            # Deep copy face helper for mask use
+            face_helper_mask = copy.deepcopy(face_helper)
+            face_helper_mask.read_image(np_mask)
+
+            # Reset cropped_faces fromm copied object
+            face_helper_mask.cropped_faces = []
+            face_helper_mask.align_warp_face()
+        else:
+            face_helper_mask = face_helper
+
         # 2) Replace face only.
         if restore_face_only:
-
-            if np_mask is not None:
-                np_mask = np_mask[:, :, ::-1]
-                # Deep copy face helper for mask use
-                face_helper_mask = copy.deepcopy(face_helper)
-                face_helper_mask.read_image(np_mask)
-
-                # Reset cropped_faces fromm copied object
-                face_helper_mask.cropped_faces = []
-                face_helper_mask.align_warp_face()
-            else:
-                face_helper_mask = face_helper
+            logger.debug("Proessing face")
 
             for face_index in range(0, len(restored_faces)):
                 restored_face = restored_faces[face_index]
-                cropped_face_source = face_helper.cropped_faces[face_index]
                 cropped_mask_source = face_helper_mask.cropped_faces[face_index]
 
                 # Find face mask
-                face_mask_arr = get_face_mask(
+                hair_mask_arr = get_face_mask(
                     image=cropped_mask_source,
                     detection_options=face_detection_options
                 )
                 # Alpha blend restored image with source face image
-                restored_face = np.array(PIL.Image.composite(
-                    PIL.Image.fromarray(restored_face),
-                    PIL.Image.fromarray(cropped_mask_source),
-                    PIL.Image.fromarray(face_mask_arr).convert('L')
+                restored_face = np.array(Image.composite(
+                    Image.fromarray(restored_face),
+                    Image.fromarray(cropped_mask_source),
+                    Image.fromarray(hair_mask_arr).convert('L')
                 ))
 
                 restored_faces[face_index] = restored_face
+
+        # 3) Replace hair from original image.
+        if restore_original_hair:
+            logger.debug("Proessing hair")
+
+            for face_index in range(0, len(restored_faces)):
+                restored_face = restored_faces[face_index]
+                cropped_mask_source = face_helper_mask.cropped_faces[face_index]
+
+                # Find face mask
+                hair_mask_arr = get_hair_mask(
+                    image=cropped_mask_source,
+                    detection_options=hair_detection_options
+                )
+                blended_face = np.array(Image.composite(
+                    Image.fromarray(cropped_mask_source),
+                    Image.fromarray(restored_face),
+                    Image.fromarray(hair_mask_arr).convert('L')
+                ))
+                restored_faces[face_index] = blended_face
 
         # Put restored face back to original image
         logger.debug("Merging restored faces into image")

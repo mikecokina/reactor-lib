@@ -8,32 +8,32 @@ from .. shared import SharedModelKeyMixin, SingletonBase
 # todo: unify caches
 
 
-class MaskerCache(SharedModelKeyMixin, SingletonBase):
+class FaceMaskerCache(SharedModelKeyMixin, SingletonBase):
     """First singleton that includes the shared model/key properties."""
     pass
 
 
-class BisenetCache(SharedModelKeyMixin, SingletonBase):
+class HairMaskerCache(SharedModelKeyMixin, SingletonBase):
     pass
 
 
-bisenet_cache = BisenetCache()
-masker_cache = MaskerCache()
+hair_masker_cache = HairMaskerCache()
+face_masker_cache = FaceMaskerCache()
 
 
-def get_hair_masker_from_cache() -> BisenetCache:
-    if bisenet_cache.model is None:
-        bisenet_cache.model = BiSeNetMaskGenerator()
-    return bisenet_cache
+def get_hair_masker_from_cache() -> HairMaskerCache:
+    if hair_masker_cache.model is None:
+        hair_masker_cache.model = BiSeNetMaskGenerator()
+    return hair_masker_cache
 
 
-def get_face_masker_from_cache() -> MaskerCache:
-    if (masker_cache.model is None) or (masker_cache.key != settings.FACE_MASKER.value):
+def get_face_masker_from_cache() -> FaceMaskerCache:
+    if (face_masker_cache.model is None) or (face_masker_cache.key != settings.FACE_MASKER.value):
         if settings.FACE_MASKER in [FaceMasker.birefnet_large, FaceMasker.birefnet_tiny]:
-            masker_cache.model = BiRefNetMaskGenerator()
+            face_masker_cache.model = BiRefNetMaskGenerator()
         elif settings.FACE_MASKER == FaceMasker.bisenet:
-            masker_cache.model = BiSeNetMaskGenerator()
+            face_masker_cache.model = BiSeNetMaskGenerator()
         else:
             raise NotImplementedError(f"{settings.FACE_SWAPPER} not implemented")
-        masker_cache.key = settings.FACE_MASKER.value
-    return masker_cache
+        face_masker_cache.key = settings.FACE_MASKER.value
+    return face_masker_cache

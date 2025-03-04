@@ -8,31 +8,21 @@ from facexlib.parsing import init_parsing_model
 from facexlib.utils.misc import img2tensor
 from torchvision.transforms.functional import normalize
 
-from .mask_generator import MaskGenerator
-from .mixins import MaskGeneratorMixin
+from .mask_generator import BaseMaskGenerator
+from .mixins import MaskGeneratorMixin, TorchMaskGeneratorMixin
 from ..conf.settings import settings
 from ..decorators import cpu_offload
 
 
-class BiSeNetMaskGenerator(MaskGenerator, MaskGeneratorMixin):
+class BiSeNetMaskGenerator(BaseMaskGenerator, MaskGeneratorMixin, TorchMaskGeneratorMixin):
     def __init__(self) -> None:
-        self.mask_model = init_parsing_model(
+        self.model = init_parsing_model(
             device=settings.device,
             model_rootpath=os.path.join(settings.MODELS_PATH, 'facexlib')
         )
 
     def name(self):
         return "BiSeNet"
-
-    def get_device(self):
-        # todo: imlpement device id option
-        _device = next(self.mask_model.parameters()).device
-        device = _device.type
-        # index = _device.index
-        return device
-
-    def set_device(self, device: str):
-        self.mask_model.to(device)
 
     # noinspection PyMethodOverriding,DuplicatedCode
     @cpu_offload
@@ -46,11 +36,12 @@ class BiSeNetMaskGenerator(MaskGenerator, MaskGeneratorMixin):
             fallback_ratio: float = 0.25,
             **kwargs,
     ) -> np.ndarray:
+        # --- Convert image to RGB form
         face_image = face_image.copy()
         face_image = face_image[:, :, ::-1]
 
         if use_minimal_area:
-            face_image = MaskGenerator.mask_non_face_areas(face_image, face_area_on_image)
+            face_image = self.mask_non_face_areas(face_image, face_area_on_image)
 
         h, w, _ = face_image.shape
         if w != 512 or h != 512:
@@ -63,7 +54,7 @@ class BiSeNetMaskGenerator(MaskGenerator, MaskGeneratorMixin):
         face_tensor = torch.unsqueeze(face_tensor, 0).to(settings.device)
 
         with torch.no_grad():
-            face = self.mask_model(face_tensor)[0]
+            face = self.model(face_tensor)[0]
         face = face.squeeze(0).cpu().numpy().argmax(0)
         face = face.copy().astype(np.uint8)
 
@@ -95,3 +86,20 @@ class BiSeNetMaskGenerator(MaskGenerator, MaskGeneratorMixin):
             elif i == 18 and keep_hat:
                 mask[index[0], index[1], :] = [255, 255, 255]
         return mask
+
+    @staticmethod
+    def mask_non_face_areas(image: np.ndarray, face_area_on_image: Tuple[int, int, int, int]) -> np.ndarray:
+        left, top, right, bottom = face_area_on_image
+        image = image.copy()
+        image[:top, :] = 0
+        image[bottom:, :] = 0
+        image[:, :left] = 0
+        image[:, right:] = 0
+        return image
+
+    @staticmethod
+    def calculate_mask_coverage(mask: np.ndarray):
+        gray_mask = cv2.cvtColor(mask, cv2.COLOR_RGB2GRAY)
+        non_black_pixels = np.count_nonzero(gray_mask)
+        total_pixels = gray_mask.size
+        return non_black_pixels / total_pixels

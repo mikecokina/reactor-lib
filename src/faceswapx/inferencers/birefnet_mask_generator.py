@@ -13,7 +13,7 @@ from ..decorators import cpu_offload
 from .mixins import MaskGeneratorMixin
 from .. shared import download_model
 
-from .. conf.settings import settings, FaceMasker, HairMasker, FaceMaskModels
+from .. conf.settings import settings, FaceMasker, FaceMaskModels
 
 
 class BiRefNetMaskGenerator(MaskGeneratorMixin):
@@ -21,7 +21,7 @@ class BiRefNetMaskGenerator(MaskGeneratorMixin):
 
     def __init__(
             self,
-            model_type: Union[FaceMasker, HairMasker]
+            model_type: Union[FaceMasker],
     ) -> None:
         self._image_size = 512
 
@@ -31,23 +31,23 @@ class BiRefNetMaskGenerator(MaskGeneratorMixin):
         if not os.path.exists(self.model_path):
             download_model(self.model_path, masker_options.url)
 
-        self.mask_model: InferenceSession = self._initialize_model()
+        self.model: InferenceSession = self._initialize_model()
 
     @staticmethod
     def name():
         return "BiRefNet"
 
     def get_device(self):
-        providers = self.mask_model.get_providers()
+        providers = self.model.get_providers()
         if "CUDAExecutionProvider" in providers:
             return 'cuda'
         return 'cpu'
 
     def set_device(self, device: str):
         if device == 'cuda':
-            self.mask_model.set_providers(["CUDAExecutionProvider"])
+            self.model.set_providers(["CUDAExecutionProvider"])
         else:
-            self.mask_model.set_providers(["CPUExecutionProvider"])
+            self.model.set_providers(["CPUExecutionProvider"])
 
     @staticmethod
     def check_state_dict(state_dict, unwanted_prefixes=None):
@@ -110,8 +110,8 @@ class BiRefNetMaskGenerator(MaskGeneratorMixin):
         dtype = np.float32 if settings.NO_HALF else np.float16
         input_image_numpy = np.array(input_image, dtype=dtype)
 
-        input_name = self.mask_model.get_inputs()[0].name
-        onnx_output = self.mask_model.run(
+        input_name = self.model.get_inputs()[0].name
+        onnx_output = self.model.run(
             None,
             {input_name: input_image_numpy}
         )[-1]

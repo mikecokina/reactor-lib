@@ -64,6 +64,10 @@ def _get_mask(
             # noinspection DuplicatedCode
             face_mask_arr = cv2.blur(face_mask_arr, kernel)
 
+        # Ensure mask shape
+        if len(face_mask_arr.shape) == 2:
+            face_mask_arr = np.stack((face_mask_arr,) * 3, axis=-1)
+
         larger_mask = cv2.resize(face_mask_arr, dsize=(face.width, face.height))
         entire_mask_image = np.zeros_like(np.array(image))
         entire_mask_image[face.top: face.bottom, face.left: face.right] = larger_mask

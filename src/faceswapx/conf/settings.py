@@ -6,6 +6,7 @@ from enum import Enum
 
 from logging import config as log_conf
 from pathlib import Path
+from typing import List, Union
 
 
 @dataclass
@@ -39,6 +40,7 @@ class FaceEnhancementOptions:
 
     restore_face_only: bool = False
     paste_back_hair: bool = False
+    faces_index: Union[List[int], None] = None
 
     face_size: int = 512
 

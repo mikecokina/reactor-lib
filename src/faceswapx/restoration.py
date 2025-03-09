@@ -31,7 +31,6 @@ def _get_mask(
 ) -> np.ndarray:
     # Affectet areas works for FaceMasker.bisenet only
     try:
-
         # Select biggest detection
         analyzed_faces = face_analyzer.analyze_faces(
             image,
@@ -111,6 +110,8 @@ def restore_with_face_helper(
     restore_face_only = enhancement_options.face_enhancement_options.restore_face_only
     paste_back_hair = enhancement_options.face_enhancement_options.paste_back_hair
 
+    faces_index = enhancement_options.face_enhancement_options.faces_index
+
     try:
         # 1) Enhance faces.
         logger.debug("Detecting faces...")
@@ -121,10 +122,18 @@ def restore_with_face_helper(
         face_helper.read_image(np_image)
         face_helper.get_face_landmarks_5(only_center_face=False, resize=640, eye_dist_threshold=5)
         face_helper.align_warp_face()
+        faces_index = faces_index if faces_index is not None else np.arange(len(face_helper.cropped_faces))
 
         logger.debug(f"Found {str(len(face_helper.cropped_faces))} faces, restoring...")
 
-        for cropped_face in face_helper.cropped_faces:
+        for index, cropped_face in enumerate(face_helper.cropped_faces):
+            # todo: Link it somehow with faces_indices from swapper. It will require ordering by
+            #  x coordinate of detected faces; take a look how it is immplemented within swapper.
+            # Skip not included face indices
+            if index not in faces_index:
+                restored_faces.append(cropped_face)
+                continue
+
             cropped_face_t = images.bgr_image_to_rgb_tensor(cropped_face / 255.0)
             normalize(cropped_face_t, [0.5, 0.5, 0.5], [0.5, 0.5, 0.5], inplace=True)
             cropped_face_t = cropped_face_t.unsqueeze(0).to(settings.device)
@@ -157,7 +166,7 @@ def restore_with_face_helper(
 
         # 2) Replace face only.
         if restore_face_only:
-            logger.debug("Proessing face")
+            logger.debug("Processing face")
 
             for face_index in range(0, len(restored_faces)):
                 restored_face = restored_faces[face_index]

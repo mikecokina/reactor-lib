@@ -75,12 +75,14 @@ class FaceSwapper(Enum):
 
 class FaceMasker(Enum):
     bisenet = "bisenet"
+    u2net = "u2net"
     birefnet_large = "birefnet_large"
     birefnet_tiny = "birefnet_tiny"
 
 
 class HairMasker(Enum):
     bisenet = "bisenet"
+    u2net = "u2net"
 
 
 class ImageUpscaler(Enum):
@@ -107,17 +109,41 @@ class FaceMaskModels(object):
             filename="birefnet-lapa-face-epoch_20--swin-v1-tiny.onnx",
             url="https://huggingface.co/mikestealth/birefnet/resolve/main/"
                 "birefnet-lapa-face-epoch_20--swin-v1-tiny.onnx"
+        ),
+        FaceMasker.u2net.value: ModelOptions(
+            filename="u2net_full_bce_itr_116000_train_0.1919_tar_0.0247___face.pth",
+            url="https://huggingface.co/mikestealth/u2net/resolve/main/"
+                "u2net_full_bce_itr_116000_train_0.1919_tar_0.0247___face.pth"
         )
     }
 
     @classmethod
-    def get_config(cls, face_masker: FaceMasker) -> ModelOptions:
-        if face_masker == FaceMasker.bisenet:
+    def get_config(cls, masker: FaceMasker) -> ModelOptions:
+        if masker == FaceMasker.bisenet:
             raise NotImplementedError("Such combination is not allowed!")
 
-        if face_masker.value in cls._config:
-            return cls._config[face_masker.value]
-        raise AttributeError(f"No such model {face_masker.value}")
+        if masker.value in cls._config:
+            return cls._config[masker.value]
+        raise AttributeError(f"No such model {masker.value}")
+
+
+class HairMaskModels(object):
+    _config = {
+        HairMasker.u2net.value: ModelOptions(
+            filename="u2net_full_bce_itr_108000_train_0.8568_tar_0.1194___hair.pth",
+            url="https://huggingface.co/mikestealth/u2net/resolve/main/"
+                "u2net_full_bce_itr_108000_train_0.8568_tar_0.1194___hair.pth"
+        ),
+    }
+
+    @classmethod
+    def get_config(cls, masker: FaceMasker) -> ModelOptions:
+        if masker == HairMasker.bisenet:
+            raise NotImplementedError("Such combination is not allowed!")
+
+        if masker.value in cls._config:
+            return cls._config[masker.value]
+        raise AttributeError(f"No such model {masker.value}")
 
 
 class ImageUpsaclerModels(object):
@@ -188,6 +214,7 @@ class FaceSwapperModels(object):
 class _Const(object):
     DISABLE_NSFW = True
     FACE_MASKER = FaceMasker.bisenet
+    HAIR_MASKER = HairMasker.bisenet
     FACE_SWAPPER = FaceSwapper.inswapper_128
     _default_model = FaceSwapperModels.get_config(FaceSwapper.inswapper_128)
 
@@ -229,6 +256,7 @@ class DefaultSettings(object):
     REALESRGAN_MODEL_DIR: str = os.path.join(MODELS_PATH, 'realesrgan')
     SWINIR_MODEL_DIR: str = os.path.join(MODELS_PATH, 'swinir')
     BIREFNET_MODEL_DIR: str = os.path.join(MODELS_PATH, 'birefnet')
+    U2NET_MODEL_DIR: str = os.path.join(MODELS_PATH, 'u2net')
 
     PROVIDERS = ["CPUExecutionProvider"]
 
@@ -292,6 +320,7 @@ class Settings(_Const, DefaultSettings):
             if key == 'MODELS_PATH':
                 cls.FACE_RESTORATION_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'codeformer')
                 cls.BIREFNET_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'birefnet')
+                cls.U2NET_MODEL_DIR = os.path.join(cls.MODELS_PATH, 'u2net')
                 cls.SWINIR_MODEL_DIR: str = os.path.join(cls.MODELS_PATH, 'swinir')
                 cls.REALESRGAN_MODEL_DIR: str = os.path.join(cls.MODELS_PATH, 'realesrgan')
 

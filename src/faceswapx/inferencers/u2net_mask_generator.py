@@ -1,20 +1,23 @@
 import os
-from typing import Dict
+from pathlib import Path
+from typing import Dict, Union
 
 import numpy as np
 import torch.nn
 from PIL import Image
+from scipy.ndimage import binary_erosion
 from torchvision import transforms
 from skimage import transform
 
-from ..conf.settings import settings
+from ..conf.settings import settings, FaceMaskModels, FaceMasker, HairMasker, HairMaskModels
+from ..decorators import cpu_offload
 from ..inferencers.mask_generator import BaseMaskGenerator
 from ..inferencers.mixins import MaskGeneratorMixin, TorchMaskGeneratorMixin
 from ..shared import download_model, resolve_device
 from ..u2net.u2net_network import U2NETFull
 
 
-__all__ = ['U2NetMaskGenerator']
+__all__ = ['U2NetFaceMaskGenerator']
 
 
 class ToTensorLab(object):
@@ -79,27 +82,38 @@ class RescaleT(object):
 
 
 class U2NetMaskGenerator(BaseMaskGenerator, MaskGeneratorMixin, TorchMaskGeneratorMixin):
+    MASK_MODEL_CONFIG: Union[FaceMaskModels, HairMaskModels] = None
+
     def __init__(
             self,
-            model_path: str,
+            model_type: Union[FaceMasker, HairMasker],
+            model_path: Union[str, Path] = None,
     ):
         self._image_size = 1024
         self.device = resolve_device(settings.device, settings.DEVICE_ID)
 
-        # masker_options = self.MASK_MODEL_CONFIG.get_config(model_type)
-        # self.model_path = os.path.join(settings.BIREFNET_MODEL_DIR, masker_options.filename)
-        self.model_path = model_path
+        masker_options = self.MASK_MODEL_CONFIG.get_config(model_type)
 
-        url = ""
+        if model_path and os.path.isfile(model_path):
+            self.model_path = model_path
+        elif model_path and os.path.isdir(model_path):
+            self.model_path = os.path.join(model_path, masker_options.filename)
+        else:
+            self.model_path = os.path.join(settings.U2NET_MODEL_DIR, masker_options.filename)
+
         if not os.path.exists(self.model_path):
-            download_model(self.model_path, url)
+            download_model(self.model_path, masker_options.url)
 
         self.model = self.load_net()
 
     def load_net(self) -> torch.nn.Module:
         net = U2NETFull()
-        net.load_state_dict(torch.load(self.model_path, map_location=self.device))
-        net.to(self.device)
+        net.load_state_dict(torch.load(self.model_path, map_location='cpu'))
+        net.to('cpu')
+
+        if not settings.CPU_OFFLOAD:
+            net.to(self.device)
+
         net.eval()
 
         return net
@@ -107,6 +121,7 @@ class U2NetMaskGenerator(BaseMaskGenerator, MaskGeneratorMixin, TorchMaskGenerat
     def name(self) -> str:
         return "U2Net"
 
+    @cpu_offload
     def generate_mask(
             self,
             # image in cv2 BGR form
@@ -129,7 +144,7 @@ class U2NetMaskGenerator(BaseMaskGenerator, MaskGeneratorMixin, TorchMaskGenerat
 
         # --- Use the same transform as training
         transf = transforms.Compose([
-            RescaleT(1024),  # resize shorter side to 320
+            RescaleT(self._image_size),  # resize shorter side to 320
             ToTensorLab(flag=0)  # convert to tensor in [0..1]
         ])
 
@@ -171,3 +186,66 @@ class U2NetMaskGenerator(BaseMaskGenerator, MaskGeneratorMixin, TorchMaskGenerat
         eps = 1e-8  # to avoid division-by-zero
         dn = (d - mi) / (ma - mi + eps)
         return dn
+
+    @staticmethod
+    def alpha_matting_cutout(
+            img: Image.Image,
+            mask: Image.Image,
+            foreground_threshold: int,
+            background_threshold: int,
+            erode_structure_size: int,
+    ) -> Image.Image:
+        """
+        Perform alpha matting on an image using a given mask and threshold values.
+
+        This function takes a PIL image `img` and a PIL image `mask` as input, along with
+        the `foreground_threshold` and `background_threshold` values used to determine
+        foreground and background pixels. The `erode_structure_size` parameter specifies
+        the size of the erosion structure to be applied to the mask.
+
+        The function returns a PIL image representing the cutout of the foreground object
+        from the original image.
+        """
+        from pymatting import estimate_alpha_cf, estimate_foreground_ml, stack_images
+
+        if img.mode == "RGBA" or img.mode == "CMYK":
+            img = img.convert("RGB")
+
+        img_array = np.asarray(img)
+        mask_array = np.asarray(mask)
+
+        is_foreground = mask_array > foreground_threshold
+        is_background = mask_array < background_threshold
+
+        structure = None
+        if erode_structure_size > 0:
+            structure = np.ones(
+                (erode_structure_size, erode_structure_size), dtype=np.uint8
+            )
+
+        is_foreground = binary_erosion(is_foreground, structure=structure)
+        is_background = binary_erosion(is_background, structure=structure, border_value=1)
+
+        trimap = np.full(mask_array.shape, dtype=np.uint8, fill_value=128)
+        trimap[is_foreground] = 255
+        trimap[is_background] = 0
+
+        img_normalized = img_array / 255.0
+        trimap_normalized = trimap / 255.0
+
+        alpha = estimate_alpha_cf(img_normalized, trimap_normalized)
+        foreground = estimate_foreground_ml(img_normalized, alpha)
+        cutout = np.array(stack_images(foreground, alpha))
+
+        cutout = np.clip(cutout * 255, 0, 255).astype(np.uint8)
+        cutout = Image.fromarray(cutout)
+
+        return cutout
+
+
+class U2NetFaceMaskGenerator(U2NetMaskGenerator):
+    MASK_MODEL_CONFIG = FaceMaskModels
+
+
+class U2NetHairMaskGenerator(U2NetMaskGenerator):
+    MASK_MODEL_CONFIG = HairMaskModels

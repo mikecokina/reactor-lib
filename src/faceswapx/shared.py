@@ -15,7 +15,7 @@ from .logger import logger
 class DummyTqdm:
     """Mock tqdm class that does nothing when progress bars are disabled."""
     def __init__(self, *args, **kwargs):
-        pass
+        self._iter = args[0] if args else []
 
     def update(self, *args, **kwargs):
         pass
@@ -28,6 +28,10 @@ class DummyTqdm:
 
     def __exit__(self, *args, **kwargs):
         pass  # Clean exit
+
+    def __iter__(self):
+        for val in self._iter:
+            yield val
 
 
 class GradioTqdmWrapper:

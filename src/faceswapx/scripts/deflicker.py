@@ -326,7 +326,7 @@ def deflicker(
     tmp_deflick_dir = str(Path(tempfile.gettempdir()) / f"deflick_{suffix_}")
 
     try:
-        with suppress_output():
+        with suppress_output(warnings_=False, logs_=False):
             face_app = get_face_analyser(det_thresh=face_detection_options.det_thresh)
             face_helper = create_face_helper()
 

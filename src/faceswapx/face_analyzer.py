@@ -63,12 +63,12 @@ def analyze_faces(
         det_thresh=0.5,
         det_maxnum=0,
 ):
-    with suppress_output():
+    with suppress_output(warnings_=False, logs_=False):
         if face_analyser_cache.model is None:
             face_analyser = copy.deepcopy(get_analysis_model(settings.MODELS_PATH))
             face_analyser_cache.model = face_analyser
+            face_analyser_cache.model.prepare(ctx_id=0, det_thresh=det_thresh, det_size=det_size)
 
-        face_analyser_cache.model.prepare(ctx_id=0, det_thresh=det_thresh, det_size=det_size)
         return face_analyser_cache.model.get(img_data, max_num=det_maxnum)
 
 
@@ -98,7 +98,7 @@ def get_face_gender(
         return None, 0
 
     if _suppress_output:
-        with suppress_output():
+        with suppress_output(warnings_=False, logs_=False):
             return _get_face_gender_logic(face, face_index, gender_condition, operated, face_gender)
     else:
         return _get_face_gender_logic(face, face_index, gender_condition, operated, face_gender)

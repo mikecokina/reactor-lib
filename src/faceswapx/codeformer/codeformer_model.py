@@ -127,7 +127,7 @@ def enhance_image(
 
     logger.info(f"Restoring the face with CodeFormer " +
                 f"(weight: {enhancement_options.face_enhancement_options.codeformer_weight})")
-    with suppress_output():
+    with suppress_output(warnings_=False, logs_=False):
         result_image = _restore_face(
             image=image,
             instance=code_former_cache.model,

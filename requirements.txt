@@ -5,13 +5,13 @@ onnx>=1.14.0,<=1.17.0
 onnxruntime>=1.16.3,<=1.22.0
 onnxruntime-gpu>=1.16.3,<=1.22.0
 opencv-python>=4.7.0.72,<=4.8.1.78
-Pillow>=10.0.1,<=10.4.0
+Pillow>=10.0.1,<=11.3.0
 pymatting<=1.1.13
 spandrel==0.2.2
 torch>=2.1.0,<=2.3.1
 torchvision>=0.16.0,<=0.18.1
 scikit-image>=0.25.0
 tqdm>=4.67.1
-requests>=2.32.3
-setuptools~=75.6.0
+requests>=2.32.4
+setuptools~=78.1.1
 nudenet==3.4.2

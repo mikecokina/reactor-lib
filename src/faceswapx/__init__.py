@@ -1,10 +1,16 @@
 __version__ = '0.1.dev0'
 
-from .conf.settings import settings
-from .react import swap, image_swap, video_swap
+import os
 
-from .codeformer.codeformer_model import enhance_image as enhance_face
-from .realsergan.realesrgan_model import enhance_image as enhance_image
+os.environ['NO_ALBUMENTATIONS_UPDATE'] = '1'
+
+from .patch import numpy_lstsq, retinaface  # noqa: E402
+
+from .conf.settings import settings  # noqa: E402
+from .react import swap, image_swap, video_swap  # noqa: E402
+# noqa: E402
+from .codeformer.codeformer_model import enhance_image as enhance_face  # noqa: E402
+from .realsergan.realesrgan_model import enhance_image as enhance_image  # noqa: E402
 
 from .conf.settings import (
     EnhancementOptions,
@@ -14,4 +20,4 @@ from .conf.settings import (
     FaceEnhancementOptions,
     FaceSwapper,
     FaceMasker
-)
+)  # noqa: E402

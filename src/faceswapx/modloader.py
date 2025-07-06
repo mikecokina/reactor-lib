@@ -43,7 +43,7 @@ def get_inswapper_model() -> INSwapper:
     model_path = os.path.join(settings.MODELS_PATH, settings.FACE_SWAPPER_MODEL_DOWNLOAD_NAME)
     if not os.path.isfile(model_path):
         download_model(model_path=model_path, model_url=settings.FACE_SWAPPER_MODEL_URL)
-    with suppress_output(prints_=True, logs_=False, warnings_=True):
+    with suppress_output(logs_=False, warnings_=False):
         return INSwapper(model_path=str(model_path))
 
 

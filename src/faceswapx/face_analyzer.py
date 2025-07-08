@@ -1,5 +1,6 @@
 import copy
 import os
+from collections import OrderedDict
 from typing import Union, Tuple, Text
 
 import numpy as np
@@ -12,26 +13,31 @@ from .modloader import get_analysis_model
 from .logger import logger
 
 
-class FaceAnalyserCache(object):
-    _instance = None
+class FaceAnalyserCache:
+    def __init__(self, max_models=3):
+        # OrderedDict preserves insertion order; we'll use it for LRU
+        self._cache = OrderedDict()
+        self.max_models = max_models
 
-    def __new__(cls):
-        if cls._instance is None:
-            cls._instance = super(FaceAnalyserCache, cls).__new__(cls)
-        return cls._instance
+    def get_model(self, det_size, det_thresh):
+        key = (det_size, det_thresh)
 
-    def __init__(self):
-        if not hasattr(self, "_model"):
-            self._model = None  # Initialize instance attribute
+        # Hit: move to end (most‐recently used) and return
+        if key in self._cache:
+            model = self._cache.pop(key)
+            self._cache[key] = model
+            return model
 
-    @property
-    def model(self):
-        """Getter for the model attribute"""
-        return self._model
+        # Miss: create, prepare, insert
+        face_analyser = copy.deepcopy(get_analysis_model(settings.MODELS_PATH))
+        face_analyser.prepare(ctx_id=0, det_thresh=det_thresh, det_size=det_size)
 
-    @model.setter
-    def model(self, value):
-        self._model = value
+        # Evict the oldest if over capacity
+        if len(self._cache) >= self.max_models:
+            self._cache.popitem(last=False)
+
+        self._cache[key] = face_analyser
+        return face_analyser
 
 
 face_analyser_cache = FaceAnalyserCache()
@@ -64,12 +70,8 @@ def analyze_faces(
         det_maxnum=0,
 ):
     with suppress_output(warnings_=False, logs_=False):
-        if face_analyser_cache.model is None:
-            face_analyser = copy.deepcopy(get_analysis_model(settings.MODELS_PATH))
-            face_analyser_cache.model = face_analyser
-            face_analyser_cache.model.prepare(ctx_id=0, det_thresh=det_thresh, det_size=det_size)
-
-        return face_analyser_cache.model.get(img_data, max_num=det_maxnum)
+        model = face_analyser_cache.get_model(det_size, det_thresh)
+        return model.get(img_data, max_num=det_maxnum)
 
 
 def _get_face_gender_logic(face, face_index, gender_condition, operated, face_gender):

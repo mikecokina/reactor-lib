@@ -30,50 +30,45 @@ def _get_mask(
         detection_options,
 ) -> np.ndarray:
     # Affectet areas works for FaceMasker.bisenet only
-    try:
-        # Select biggest detection
-        analyzed_faces = face_analyzer.analyze_faces(
-            image,
-            det_thresh=detection_options.det_thresh,
-            det_maxnum=detection_options.det_maxnum
-        )
-        covers = [bbox_percentage(*face.bbox, *image.shape[:2]) for face in analyzed_faces]
-        recommended_face_index = np.argsort(covers)[-1]
-        analyzed_face = analyzed_faces[recommended_face_index]
+    # Select biggest detection
+    analyzed_faces = face_analyzer.analyze_faces(
+        image,
+        det_thresh=detection_options.det_thresh,
+        det_maxnum=detection_options.det_maxnum
+    )
+    covers = [bbox_percentage(*face.bbox, *image.shape[:2]) for face in analyzed_faces]
+    recommended_face_index = np.argsort(covers)[-1]
+    analyzed_face = analyzed_faces[recommended_face_index]
 
-        if "Hair" in affected_areas:
-            mask_generator = get_hair_masker_from_cache().model
-        else:
-            mask_generator = get_face_masker_from_cache().model
+    if "Hair" in affected_areas:
+        mask_generator = get_hair_masker_from_cache().model
+    else:
+        mask_generator = get_face_masker_from_cache().model
 
-        face = FaceArea(image, Rect.from_ndarray(np.array(analyzed_face.bbox)), 1.6, 512, "")
-        face_image = np.array(face.image)
-        face_area_on_image = face.face_area_on_image
+    face = FaceArea(image, Rect.from_ndarray(np.array(analyzed_face.bbox)), 1.6, 512, "")
+    face_image = np.array(face.image)
+    face_area_on_image = face.face_area_on_image
 
-        face_mask_arr = mask_generator.generate_mask(
-            face_image,
-            face_area_on_image=face_area_on_image,
-            affected_areas=affected_areas,
-            mask_size=detection_options.mask_size,
-            use_minimal_area=False
-        )
+    face_mask_arr = mask_generator.generate_mask(
+        face_image,
+        face_area_on_image=face_area_on_image,
+        affected_areas=affected_areas,
+        mask_size=detection_options.mask_size,
+        use_minimal_area=False
+    )
 
-        if detection_options.mask_blur_kernel > 0:
-            kernel = (detection_options.mask_blur_kernel, detection_options.mask_blur_kernel)
-            # noinspection DuplicatedCode
-            face_mask_arr = cv2.blur(face_mask_arr, kernel)
+    if detection_options.mask_blur_kernel > 0:
+        kernel = (detection_options.mask_blur_kernel, detection_options.mask_blur_kernel)
+        # noinspection DuplicatedCode
+        face_mask_arr = cv2.blur(face_mask_arr, kernel)
 
-        # Ensure mask shape
-        if len(face_mask_arr.shape) == 2:
-            face_mask_arr = np.stack((face_mask_arr,) * 3, axis=-1)
+    # Ensure mask shape
+    if len(face_mask_arr.shape) == 2:
+        face_mask_arr = np.stack((face_mask_arr,) * 3, axis=-1)
 
-        larger_mask = cv2.resize(face_mask_arr, dsize=(face.width, face.height))
-        entire_mask_image = np.zeros_like(np.array(image))
-        entire_mask_image[face.top: face.bottom, face.left: face.right] = larger_mask
-
-    except IndexError:
-        # In case of error, mask is an entire image
-        entire_mask_image = np.ones(image.shape, dtype=np.uint8) * 255
+    larger_mask = cv2.resize(face_mask_arr, dsize=(face.width, face.height))
+    entire_mask_image = np.zeros_like(np.array(image))
+    entire_mask_image[face.top: face.bottom, face.left: face.right] = larger_mask
 
     return entire_mask_image
 
@@ -82,14 +77,23 @@ def get_hair_mask(
         image: np.ndarray,
         detection_options,
 ):
-    return _get_mask(image, affected_areas=["Hair"], detection_options=detection_options)
+    try:
+        return _get_mask(image, affected_areas=["Hair"], detection_options=detection_options)
+    except IndexError:
+        # From logic as hairs are masked, requires entire image mask to be black in case of error,
+        # basically means no hair/face found.
+        return np.zeros(image.shape, dtype=np.uint8)
 
 
 def get_face_mask(
         image: np.ndarray,
         detection_options,
 ) -> np.ndarray:
-    return _get_mask(image, affected_areas=["Face"], detection_options=detection_options)
+    try:
+        return _get_mask(image, affected_areas=["Face"], detection_options=detection_options)
+    except IndexError:
+        # In case of error, mask is an entire image
+        return np.ones(image.shape, dtype=np.uint8) * 255
 
 
 # noinspection DuplicatedCode

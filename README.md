@@ -44,6 +44,8 @@ FaceSwap-X is a powerful Python library for face swapping, face enhancement, and
 - *BiRefNet*: https://github.com/ZhengPeng7/BiRefNet
 - *RealESRGAN*: https://github.com/xinntao/Real-ESRGAN
 - *SwinIR*: https://github.com/JingyunLiang/SwinIR
+- *CodeFormer*: https://github.com/sczhou/CodeFormer
+- *GFPGAN*: https://github.com/TencentARC/GFPGAN
 
 ## Examples
 

@@ -89,6 +89,12 @@ A simple image-to-image swap interface is provided in the file `ui/img2img.py`.
 A simple image-to-video swap interface is provided in the file `ui/img2vid.py`.
 Run it as a Python script. First, install `gradio==5.13.1`.
 
+Example: run from console with command:
+
+```shell
+PYTHONPATH="<path/to/src>" python img2img.py 
+```
+
 ### Code
 
 ```python

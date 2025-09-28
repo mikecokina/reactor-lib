@@ -16,7 +16,7 @@ from ..conf.settings import FaceSwapper
 from ..shared import torch_gc
 
 
-class INSwapper(object):
+class INSwapper:
     def __init__(self, model_path: Text, session=None):
         model_path = model_path or os.path.join(settings.MODELS_PATH, settings.FACE_SWAPPER_MODEL_DOWNLOAD_NAME)
 

@@ -14,7 +14,7 @@ from ..logger import logger
 from ..shared import download_model, resolve_device
 
 
-class RealESRGANer(object):
+class RealESRGANer:
     def __init__(
             self,
             scale,

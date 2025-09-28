@@ -18,7 +18,7 @@ def getLogger(name, suppress=False):
     return logging.getLogger(name=name) if not suppress else Logger(name)
 
 
-class CustomLogger(object):
+class CustomLogger:
     _instance = None
 
     SUPPRESS_LOGGER: bool = False
@@ -71,7 +71,7 @@ def getPersistentLogger(name):
     return logging.getLogger(name=name)
 
 
-class Logger(object):
+class Logger:
     # noinspection PyUnusedLocal
     def __init__(self, name, *args, **kwargs):
         self.name = name

@@ -10,11 +10,11 @@ from ..shared import SharedModelKeyMixin, SingletonBase
 
 class FaceMaskerCache(SharedModelKeyMixin, SingletonBase):
     """First singleton that includes the shared model/key properties."""
-    pass
+    ...
 
 
 class HairMaskerCache(SharedModelKeyMixin, SingletonBase):
-    pass
+    ...
 
 
 hair_masker_cache = HairMaskerCache()

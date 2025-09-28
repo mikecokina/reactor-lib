@@ -1,7 +1,7 @@
 import os.path
 from pathlib import Path
 from PIL import Image
-from faceswapx.codeformer.codeformer_model import enhance_image
+from faceswapx.codeformer.face_restorer import enhance_image
 
 from faceswapx import settings, FaceEnhancementOptions, EnhancementOptions, DetectionOptions
 
@@ -11,8 +11,8 @@ IMAGE_EXTENSIONS = ('.webp', '.png', '.jpg', '.jpeg', '.gif', '.bmp')
 def process_images(
         input_dir,
         output_dir,
-        codeformer_visibility: float = 1.0,
-        codeformer_weight: float = 0.5,
+        restorer_visibility: float = 1.0,
+        restorer_weight: float = 0.5,
         restore_face_only: bool = True,
         allowed_extensions=IMAGE_EXTENSIONS,
         skip_if_exists: bool = False
@@ -26,8 +26,8 @@ def process_images(
             face_enhancement_options=FaceEnhancementOptions(
                 do_enhancement=True,
                 enhance_target=False,
-                codeformer_visibility=codeformer_visibility,
-                codeformer_weight=codeformer_weight,
+                restorer_visibility=restorer_visibility,
+                restorer_weight=restorer_weight,
                 restore_face_only=restore_face_only,
                 face_detection_options=DetectionOptions(
                     det_thresh=0.25,
@@ -67,8 +67,8 @@ if __name__ == "__main__":
     process_images(
         input_dir="",
         output_dir="",
-        codeformer_weight=0.5,
-        codeformer_visibility=1.0,
+        restorer_weight=0.5,
+        restorer_visibility=1.0,
         skip_if_exists=True,
         restore_face_only=True
     )

@@ -11,7 +11,7 @@ from .network_swinir import SwinIR as Net
 from ..shared import torch_gc, DummyTqdm, resolve_device, download_model
 
 
-class SwinIRModel(object):
+class SwinIRModel:
     def __init__(
             self,
             tile: int = 0,

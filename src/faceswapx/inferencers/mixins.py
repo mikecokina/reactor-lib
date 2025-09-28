@@ -3,7 +3,7 @@ import numpy as np
 import torch
 
 
-class MaskGeneratorMixin(object):
+class MaskGeneratorMixin:
     @staticmethod
     def morph_mask(mask: np.ndarray, mask_size: int):
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
@@ -14,7 +14,7 @@ class MaskGeneratorMixin(object):
         return mask
 
 
-class TorchMaskGeneratorMixin(object):
+class TorchMaskGeneratorMixin:
     def get_model(self) -> torch.nn.Module:
         if hasattr(self, 'model'):
             return self.model

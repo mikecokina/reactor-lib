@@ -26,6 +26,7 @@ v0.1.dev0_
     - Image-to-Video Face Swap
     - Image Enhancement
         - Enhancements of swapped faces with CodeFormer
+        - Enhancements of swapped faces with GFPGAN
         - Supports face enhancements only
             - Provided via segmentation of human faces via Bisenet or Birefnet (trained by myself)
     - Suported Face Swap Models
@@ -35,4 +36,3 @@ v0.1.dev0_
 
 * **Not Supported**
     - Model-based source (will not be implemented)
-

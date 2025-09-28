@@ -14,6 +14,8 @@ from .logger import logger
 # Define a mock tqdm class
 class DummyTqdm:
     """Mock tqdm class that does nothing when progress bars are disabled."""
+
+    # noinspection PyUnusedLocal
     def __init__(self, *args, **kwargs):
         self._iter = args[0] if args else []
 
@@ -36,6 +38,8 @@ class DummyTqdm:
 
 class GradioTqdmWrapper:
     """Mock tqdm class that does nothing when progress bars are disabled."""
+
+    # noinspection PyUnusedLocal
     def __init__(self, *args, **kwargs):
         self._tqdm_cls = args[0]
         self._total = None
@@ -45,6 +49,7 @@ class GradioTqdmWrapper:
     def __iter__(self):
         self.update()
 
+    # noinspection PyUnusedLocal
     def update(self, *args, **kwargs):
         self._tqdm_instance.__next__()
 
@@ -60,6 +65,33 @@ class GradioTqdmWrapper:
 
     def __exit__(self, *args, **kwargs):
         pass  # Clean exit
+
+
+class CacheSingletonBase:
+    _instances = {}
+    _state = {}
+
+    # subclasses can override this
+    _fields = []
+
+    def __new__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            instance = super().__new__(cls)
+            cls._instances[cls] = instance
+            cls._state[cls] = {field: None for field in cls._fields}
+        return cls._instances[cls]
+
+    def __getattr__(self, name):
+        """Handle property-style access for declared fields"""
+        if name in self._fields:
+            return self._state[self.__class__][name]
+        raise AttributeError(f"{self.__class__.__name__} has no attribute {name}")
+
+    def __setattr__(self, name, value):
+        if name in self._fields:
+            self._state[self.__class__][name] = value
+        else:
+            super().__setattr__(name, value)
 
 
 class SharedModelKeyMixin:

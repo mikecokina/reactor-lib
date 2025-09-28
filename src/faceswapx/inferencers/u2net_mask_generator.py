@@ -17,10 +17,13 @@ from ..shared import download_model, resolve_device
 from ..u2net.u2net_network import U2NETFull
 
 
-__all__ = ['U2NetFaceMaskGenerator']
+__all__ = [
+    "U2NetFaceMaskGenerator",
+    "U2NetHairMaskGenerator"
+]
 
 
-class ToTensorLab(object):
+class ToTensorLab:
     """Convert ndarrays in sample to Tensors."""
 
     def __init__(self, flag: int = 0):
@@ -57,7 +60,7 @@ class ToTensorLab(object):
         }
 
 
-class RescaleT(object):
+class RescaleT:
 
     def __init__(self, output_size: int):
         assert isinstance(output_size, (int, tuple))

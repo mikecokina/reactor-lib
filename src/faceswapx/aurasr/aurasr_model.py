@@ -749,7 +749,7 @@ def merge_tiles(tiles, h_chunks, w_chunks, chunk_size=64):
 
 
 # noinspection PyTestUnpassedFixture
-class AuraSRGigaGAN(object):
+class AuraSRGigaGAN:
     def __init__(
             self,
             model_path: Union[str, Path],

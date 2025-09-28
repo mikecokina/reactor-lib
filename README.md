@@ -19,6 +19,9 @@ FaceSwap-X is a powerful Python library for face swapping, face enhancement, and
 
     - Enhance entire cropped face images or just the face region.
     - Uses BiSeNet or BiRefNet for accurate face segmentation.
+    - Models:
+      - CodeFormer
+      - GFPGAN
 
 - Image Upscaling
     - Improve image quality with Real-ESRGAN or SwinIR.
@@ -90,56 +93,56 @@ Run it as a Python script. First, install `gradio==5.13.1`.
 
 ```python
 from faceswapx import (
-    settings, swap, DetectionOptions, EnhancementOptions,
-    FaceBlurOptions, FaceEnhancementOptions, FaceSwapper, FaceMasker
+  settings, swap, DetectionOptions, EnhancementOptions,
+  FaceBlurOptions, FaceEnhancementOptions, FaceSwapper, FaceMasker
 )
 
 
 def main():
-    settings.configure(**{
-        'DEVICE': 'CUDA',
-        # "MODELS_PATH": "/absolute/path/to/models/directory",
-        "FACE_SWAPPER": FaceSwapper.reswapper_256_1567500,
-        "FACE_MASKER": FaceMasker.birefnet_large
-    })
+  settings.configure(**{
+    'DEVICE': 'CUDA',
+    # "MODELS_PATH": "/absolute/path/to/models/directory",
+    "FACE_SWAPPER": FaceSwapper.reswapper_256_1567500,
+    "FACE_MASKER": FaceMasker.birefnet_large
+  })
 
-    enhancement_options = EnhancementOptions(
-        face_enhancement_options=FaceEnhancementOptions(
-            do_enhancement=True,
-            enhance_target=False,
-            codeformer_visibility=1.0,
-            codeformer_weight=0.5,
-            restore_face_only=False,
-            # Face enhancer detection options for BiseNet
-            face_detection_options=DetectionOptions(
-                det_thresh=0.25,
-                det_maxnum=0
-            )
-        )
+  enhancement_options = EnhancementOptions(
+    face_enhancement_options=FaceEnhancementOptions(
+      do_enhancement=True,
+      enhance_target=False,
+      restorer_visibility=1.0,
+      restorer_weight=0.5,
+      restore_face_only=False,
+      # Face enhancer detection options for BiseNet
+      face_detection_options=DetectionOptions(
+        det_thresh=0.25,
+        det_maxnum=0
+      )
     )
-    # Face swapper detection options
-    detection_options = DetectionOptions(det_thresh=0.65, det_maxnum=0)
-    face_blur_options = FaceBlurOptions(
-        do_face_blur=False,
-        do_video_noise=False,
-        blur_radius=2,
-        blur_strength=0.2,
-        noise_pixel_size=1
-    )
+  )
+  # Face swapper detection options
+  detection_options = DetectionOptions(det_thresh=0.65, det_maxnum=0)
+  face_blur_options = FaceBlurOptions(
+    do_face_blur=False,
+    do_video_noise=False,
+    blur_radius=2,
+    blur_strength=0.2,
+    noise_pixel_size=1
+  )
 
-    result_image, n_swapped = swap(
-        source_image="/absolute/path/to/source/image.<ext>",
-        target_image="/absolute/path/to/target/image.<ext>",
-        target_faces_index=[0],
-        source_faces_index=[0],
-        enhancement_options=enhancement_options,
-        detection_options=detection_options,
-        face_blur_options=face_blur_options
-    )
+  result_image, n_swapped = swap(
+    source_image="/absolute/path/to/source/image.<ext>",
+    target_image="/absolute/path/to/target/image.<ext>",
+    target_faces_index=[0],
+    source_faces_index=[0],
+    enhancement_options=enhancement_options,
+    detection_options=detection_options,
+    face_blur_options=face_blur_options
+  )
 
 
 if __name__ == "__main__":
-    main()
+  main()
 ```
 
 
@@ -150,108 +153,108 @@ from faceswapx import settings, swap, DetectionOptions, EnhancementOptions, Face
 
 
 def main():
-    settings.configure(**{
-        'DEVICE': 'CUDA',
-    })
+  settings.configure(**{
+    'DEVICE': 'CUDA',
+  })
 
-    enhancement_options = EnhancementOptions(
-        face_enhancement_options=FaceEnhancementOptions(
-            do_enhancement=True,
-            enhance_target=False,
-            codeformer_visibility=1.0,
-            codeformer_weight=0.5,
-            restore_face_only=False,
-            # Face enhancer detection options for face masking 
-            face_detection_options=DetectionOptions(
-                det_thresh=0.25,
-                det_maxnum=0
-            )
-        )
+  enhancement_options = EnhancementOptions(
+    face_enhancement_options=FaceEnhancementOptions(
+      do_enhancement=True,
+      enhance_target=False,
+      restorer_visibility=1.0,
+      restorer_weight=0.5,
+      restore_face_only=False,
+      # Face enhancer detection options for face masking 
+      face_detection_options=DetectionOptions(
+        det_thresh=0.25,
+        det_maxnum=0
+      )
     )
-    detection_options = DetectionOptions(det_thresh=0.65, det_maxnum=0)
-    face_blur_options = FaceBlurOptions(
-        do_face_blur=False,
-        do_video_noise=False,
-        blur_radius=2,
-        blur_strength=0.2,
-        noise_pixel_size=1
-    )
+  )
+  detection_options = DetectionOptions(det_thresh=0.65, det_maxnum=0)
+  face_blur_options = FaceBlurOptions(
+    do_face_blur=False,
+    do_video_noise=False,
+    blur_radius=2,
+    blur_strength=0.2,
+    noise_pixel_size=1
+  )
 
-    _, n_swapped = swap(
-        source_image="/absolute/path/to/source/image.<ext>",
-        target_faces_index=[0],
-        source_faces_index=[0],
-        input_directory="/absolute/path/to/target/images",
-        output_directory="/absolute/path/to/store/results",
-        enhancement_options=enhancement_options,
-        detection_options=detection_options,
-        face_blur_options=face_blur_options,
-        face_mask_correction=True,
-        face_mask_correction_size=10,
-        skip_if_exists=False,
-        progressbar=False,
-    )
+  _, n_swapped = swap(
+    source_image="/absolute/path/to/source/image.<ext>",
+    target_faces_index=[0],
+    source_faces_index=[0],
+    input_directory="/absolute/path/to/target/images",
+    output_directory="/absolute/path/to/store/results",
+    enhancement_options=enhancement_options,
+    detection_options=detection_options,
+    face_blur_options=face_blur_options,
+    face_mask_correction=True,
+    face_mask_correction_size=10,
+    skip_if_exists=False,
+    progressbar=False,
+  )
 
 
 if __name__ == '__main__':
-    main()
+  main()
 ```
 
 ## Example of video processing
 
 ```python
 from faceswapx import (
-    settings, DetectionOptions, EnhancementOptions,
-    FaceBlurOptions, FaceEnhancementOptions, video_swap
+  settings, DetectionOptions, EnhancementOptions,
+  FaceBlurOptions, FaceEnhancementOptions, video_swap
 )
 
 
 def main():
-    settings.configure(**{
-        'DEVICE': 'CUDA',
-    })
+  settings.configure(**{
+    'DEVICE': 'CUDA',
+  })
 
-    enhancement_options = EnhancementOptions(
-        face_enhancement_options=FaceEnhancementOptions(
-            do_enhancement=True,
-            enhance_target=False,
-            codeformer_visibility=0.5,
-            codeformer_weight=0.5,
-            restore_face_only=True,
-            face_detection_options=DetectionOptions(
-                det_thresh=0.25,
-                det_maxnum=0
-            )
-        ),
-    )
-    detection_options = DetectionOptions(det_thresh=0.65, det_maxnum=0)
-    face_blur_options = FaceBlurOptions(
-        do_face_blur=False,
-        do_video_noise=False,
-        blur_radius=2,
-        blur_strength=0.2,
-        noise_pixel_size=1
-    )
+  enhancement_options = EnhancementOptions(
+    face_enhancement_options=FaceEnhancementOptions(
+      do_enhancement=True,
+      enhance_target=False,
+      restorer_visibility=0.5,
+      restorer_weight=0.5,
+      restore_face_only=True,
+      face_detection_options=DetectionOptions(
+        det_thresh=0.25,
+        det_maxnum=0
+      )
+    ),
+  )
+  detection_options = DetectionOptions(det_thresh=0.65, det_maxnum=0)
+  face_blur_options = FaceBlurOptions(
+    do_face_blur=False,
+    do_video_noise=False,
+    blur_radius=2,
+    blur_strength=0.2,
+    noise_pixel_size=1
+  )
 
-    video_swap(
-        source_image="</path/to/image.ext>",
-        target_video="</path/to/video.mp4>",
-        source_faces_index=[0],
-        target_faces_index=[0],
-        output_directory="/absolute/path/to/store/results",
-        enhancement_options=enhancement_options,
-        detection_options=detection_options,
-        face_blur_options=face_blur_options,
-        progressbar=True,
-        face_mask_correction_size=10,
-        high_quality=False,
-        keep_frames=False,
-        desired_fps=25.0
-    )
+  video_swap(
+    source_image="</path/to/image.ext>",
+    target_video="</path/to/video.mp4>",
+    source_faces_index=[0],
+    target_faces_index=[0],
+    output_directory="/absolute/path/to/store/results",
+    enhancement_options=enhancement_options,
+    detection_options=detection_options,
+    face_blur_options=face_blur_options,
+    progressbar=True,
+    face_mask_correction_size=10,
+    high_quality=False,
+    keep_frames=False,
+    desired_fps=25.0
+  )
 
 
 if __name__ == '__main__':
-    main()
+  main()
 ```
     
 ## Example for CodeFormer (solves issues with hair - enhances face only if needed!)
@@ -262,28 +265,28 @@ from faceswapx import EnhancementOptions, DetectionOptions, enhance_face, settin
 
 
 def main():
-    settings.configure(**{
-        'DEVICE': 'CUDA',
-    })
+  settings.configure(**{
+    'DEVICE': 'CUDA',
+  })
 
-    image = PIL.Image.open("</path/to/image.ext>")
-    enhancement_options = EnhancementOptions(
-        face_enhancement_options=FaceEnhancementOptions(
-            do_enhancement=True,
-            codeformer_visibility=1.0,
-            codeformer_weight=0.5,
-            restore_face_only=True,  # this does the job
-            face_detection_options=DetectionOptions(
-                det_thresh=0.25,
-                det_maxnum=0
-            )  # this plays role in face mask detection
-        )
+  image = PIL.Image.open("</path/to/image.ext>")
+  enhancement_options = EnhancementOptions(
+    face_enhancement_options=FaceEnhancementOptions(
+      do_enhancement=True,
+      restorer_visibility=1.0,
+      restorer_weight=0.5,
+      restore_face_only=True,  # this does the job
+      face_detection_options=DetectionOptions(
+        det_thresh=0.25,
+        det_maxnum=0
+      )  # this plays role in face mask detection
     )
-    result = enhance_face(image, enhancement_options)
+  )
+  result = enhance_face(image, enhancement_options)
 
 
 if __name__ == '__main__':
-    main()
+  main()
 ```
 
 Models are downloaded automatically. Approximately 1.5 GB of free space is required.

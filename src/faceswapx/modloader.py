@@ -13,17 +13,17 @@ from .logger import logger
 
 
 def load_spandrel_model(
-    path: str | os.PathLike,
-    *,
-    device: str | torch.device | None,
-    prefer_half: bool = False,
-    dtype: str | torch.dtype | None = None,
-    expected_architecture: str | None = None,
+        path: str | os.PathLike,
+        *,
+        device: str | torch.device | None,
+        prefer_half: bool = False,
+        dtype: str | torch.dtype | None = None,
+        expected_architecture: str | None = None,
 ) -> spandrel.ModelDescriptor:
     model_descriptor = spandrel.ModelLoader(device=device).load_from_file(str(path))
     if expected_architecture and model_descriptor.architecture != expected_architecture:
         logger.warning(
-            f"Model {path!r} is not a {expected_architecture!r} model (got {model_descriptor.architecture!r})"
+            "Model {path!r} is not a {expected_architecture!r} model (got {model_descriptor.architecture!r})"
         )
     half = False
     if prefer_half:
@@ -31,11 +31,14 @@ def load_spandrel_model(
             model_descriptor.model.half()
             half = True
         else:
-            logger.info(f"Model {path} does not support half precision, ignoring --half")
+            logger.info("Model %s does not support half precision, ignoring --half", path)
     if dtype:
         model_descriptor.model.to(dtype=dtype)
     model_descriptor.model.eval()
-    logger.debug(f"Loaded {model_descriptor} from {path} (device={device}, half={half}, dtype={dtype})")
+    logger.debug(
+        "Loaded %s from %s (device=%s, half=%s, dtype=%s)",
+        model_descriptor, path, device, half, dtype
+    )
     return model_descriptor
 
 

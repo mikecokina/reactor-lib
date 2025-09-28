@@ -1,10 +1,9 @@
-import os
 from abc import abstractmethod
 
 import numpy as np
 from PIL import Image
 
-from .conf.settings import settings, ImageUpscalerOptions
+from .conf.settings import ImageUpscalerOptions
 
 # noinspection PyUnresolvedReferences
 LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
@@ -12,7 +11,7 @@ LANCZOS = (Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.L
 NEAREST = (Image.Resampling.NEAREST if hasattr(Image, 'Resampling') else Image.NEAREST)
 
 
-class Upscaler(object):
+class Upscaler:
     name = None
 
     def __init__(self, options: ImageUpscalerOptions):
@@ -113,7 +112,7 @@ class UpscalerRealESRGAN(Upscaler):
 
     def _validate_scale(self, scale: int) -> bool:
         if scale not in (2, 4):
-            raise ValueError(f"Scale must be 2 or 4 for RealESRGAN model")
+            raise ValueError("Scale must be 2 or 4 for RealESRGAN model")
         return True
 
 

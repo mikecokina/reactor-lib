@@ -152,14 +152,14 @@ def get_face_single(
     try:
         face_age = get_face_age(faces, face_index)
     except BaseException:
-        logger.warning(f"Cannot detect any age for face index = {face_index}")
+        logger.warning("Cannot detect any age for face index = %s", face_index)
 
     # noinspection PyBroadException
     try:
         face_gender = get_gender(faces, face_index)
         face_gender = "Female" if face_gender == "F" else ("Male" if face_gender == "M" else "None")
     except BaseException:
-        logger.warning(f"Cannot detect any Gender for Face index = %s", face_index)
+        logger.warning("Cannot detect any Gender for Face index = %s", face_index)
 
     try:
         return sorted(

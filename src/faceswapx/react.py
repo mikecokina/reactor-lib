@@ -14,8 +14,11 @@ from PIL import ImageFilter
 from insightface.app.common import Face
 
 from . import images, face_analyzer
-from .conf.settings import settings
-from .codeformer.codeformer_model import enhance_image
+from .conf.settings import settings, FaceRestorer
+
+from .codeformer.face_restorer import enhance_image as codeformer_face_enhancer
+from .gfpgan.face_restorer import enhance_image as gfpgan_face_enhancer
+
 from .conf.settings import EnhancementOptions, DetectionOptions, FaceBlurOptions, FaceSwapper
 from .entities.face import FaceArea
 from .entities.rect import Rect
@@ -25,6 +28,16 @@ from .nudity import is_nsfw
 from .shared import color_generator, listdir, torch_gc, get_tqdm_cls
 from .logger import logger
 from .video.utils import video2frames, frames2video
+
+
+def _get_restore_face_executor() -> callable:
+    if settings.FACE_RESTORER == FaceRestorer.codeformer:
+        return codeformer_face_enhancer
+    if settings.FACE_RESTORER == FaceRestorer.gfpgan:
+        return gfpgan_face_enhancer
+
+    msg = f"Not implemented face enhancer method for `{settings.FACE_RESTORER}`"
+    raise NotImplementedError(msg)
 
 
 # noinspection PyUnusedLocal
@@ -166,7 +179,7 @@ def _apply_face_mask(
     return np.array(result)
 
 
-class FaceSwapperCache(object):
+class FaceSwapperCache:
     _instance = None
 
     def __new__(cls):
@@ -281,7 +294,8 @@ def operate(
 
                     swapped += 1
                 elif wrong_gender == 1:
-                    raise NotImplemented("Implement wrong gender swapping")
+                    msg = "Implement wrong gender swapping"
+                    raise NotImplementedError(msg)
 
     # Several sources and several targets defined via index mapping
     elif len(source_faces_index) == len(target_faces_index):
@@ -337,6 +351,7 @@ def operate(
         enhance_image_kwargs = dict(**dict(np_mask=target_img[:, :, ::-1]) if use_original_as_mask else {})
 
         for _ in range(0, enhancement_options.face_enhancement_options.enhance_loops):
+            enhance_image = _get_restore_face_executor()
             result_image = enhance_image(result_image, enhancement_options, **enhance_image_kwargs)
 
     if (face_blur_options.do_face_blur or face_blur_options.do_video_noise) and target_face is not None:
@@ -464,18 +479,20 @@ def _single(
     target_img_org = target_img.copy()
 
     if enhancement_options.face_enhancement_options.enhance_target:
-        logger.info('Fixing face in target image first')
+        enhance_image = _get_restore_face_executor()
+
+        logger.info("Fixing face in target image first")
         target_img = enhance_image(target_img, enhancement_options)
 
     # noinspection PyTypeChecker
     target_img = cv2.cvtColor(np.array(target_img), cv2.COLOR_RGB2BGR)
-    target_img_orig = cv2.cvtColor(np.array(target_img), cv2.COLOR_RGB2BGR)
+    # target_img_orig = cv2.cvtColor(np.array(target_img), cv2.COLOR_RGB2BGR)
     entire_mask_image = np.zeros_like(np.array(target_img))
 
     # TODO: implement gender selector
     # (0 - No, 1 - Female Only, 2 - Male Only)
-    gender_source: int = 0
-    gender_target: int = 0
+    # gender_source: int = 0
+    # gender_target: int = 0
     swapped = 0
 
     if source_img is not None:
@@ -501,20 +518,20 @@ def _single(
 
         # Return original target image if no faces were detected
         if target_faces is None:
-            logger.warning(f"No faces within target image were found")
+            logger.warning("No faces within target image were found")
             return target_img_org, 0
 
         if source_faces is None:
-            logger.warning(f"No faces within source image were found")
+            logger.warning("No faces within source image were found")
             return target_img_org, 0
 
         # Case when length of source face indices detected is lower than assumed source faces on input.
         if len(source_faces_index) > 1 and (len(source_faces_index) != len(source_faces)):
-            raise ValueError(f"Invalid amount of indices within `source_faces`")
+            raise ValueError("Invalid amount of indices within `source_faces`")
 
         # Case when length of target face indices detected is lower than assumed target faces on input.
         if len(target_faces_index) > 1 and (len(target_faces_index) != len(target_faces)):
-            raise ValueError(f"Invalid amount of indices within `target_faces`")
+            raise ValueError("Invalid amount of indices within `target_faces`")
 
         source_face = source_face or None
         if len(source_faces_index) == 1 and source_face is None:

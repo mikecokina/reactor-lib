@@ -24,8 +24,8 @@ def operate(
         face_enhancement_options=FaceEnhancementOptions(
             do_enhancement=kwargs.get("do_enhancement", True),
             enhance_target=kwargs.get("enhance_target", False),
-            codeformer_visibility=kwargs.get("codeformer_visibility", 0.5),
-            codeformer_weight=kwargs.get("codeformer_weight", 0.5),
+            restorer_visibility=kwargs.get("restorer_visibility", 0.5),
+            restorer_weight=kwargs.get("restorer_weight", 0.5),
             restore_face_only=kwargs.get("restore_face_only", False),
             face_detection_options=DetectionOptions(
                 det_thresh=0.25,
@@ -86,8 +86,8 @@ def main():
         with gr.Row():
             restore_face_only = gr.Checkbox(label="restore_face_only", value=True)
             do_enhancement = gr.Checkbox(label="do_enhancement", value=True)
-            codeformer_visibility = gr.Slider(value=0.5, minimum=0, maximum=1, step=0.05, label="Codeformer Visibility")
-            codeformer_weight = gr.Slider(value=0.5, minimum=0, maximum=1, step=0.05, label="Codeformer Weight")
+            restorer_visibility = gr.Slider(value=0.5, minimum=0, maximum=1, step=0.05, label="Codeformer Visibility")
+            restorer_weight = gr.Slider(value=0.5, minimum=0, maximum=1, step=0.05, label="Codeformer Weight")
 
         gr.Markdown("### Detection Options")
         with gr.Row():
@@ -132,8 +132,8 @@ def main():
             "det_maxnum": det_maxnum,
             "restore_face_only": restore_face_only,
             "do_enhancement": do_enhancement,
-            "codeformer_visibility": codeformer_visibility,
-            "codeformer_weight": codeformer_weight,
+            "restorer_visibility": restorer_visibility,
+            "restorer_weight": restorer_weight,
             "source_image": source_image,
             "target_image": target_image,
             "face_swapper": face_swapper,

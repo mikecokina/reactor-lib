@@ -10,7 +10,7 @@ from ..conf.settings import FaceSwapper
 from .. reswapper.stf_128 import StyleTransferModel
 
 
-class RESwapper(object):
+class RESwapper:
     def __init__(self, model_path: Text, device: Text = 'cpu'):
         model = StyleTransferModel().to(device)
         model.load_state_dict(torch.load(model_path, map_location=device), strict=False)

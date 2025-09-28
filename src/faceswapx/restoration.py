@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import os
+import typing
 from functools import cached_property
 from typing import Callable, Union, List
 
@@ -13,6 +14,7 @@ import torch
 from PIL import Image
 
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
+from torch import nn
 
 from .inferencers.maskers import get_face_masker_from_cache, get_hair_masker_from_cache
 from .logger import logger
@@ -21,7 +23,18 @@ from .entities.face import FaceArea
 from .entities.rect import Rect
 
 from .conf.settings import EnhancementOptions
-from .shared import bbox_percentage
+from .shared import bbox_percentage, SharedModelKeyMixin, SingletonBase
+
+if typing.TYPE_CHECKING:
+    from .codeformer.face_restorer import FaceRestorerCodeFormer
+    from .gfpgan.face_restorer import FaceRestorerGFPGAN
+
+
+class FaceRestorationCache(SharedModelKeyMixin, SingletonBase):
+    ...
+
+
+face_restoration_cache = FaceRestorationCache()
 
 
 def _get_mask(
@@ -100,7 +113,7 @@ def get_face_mask(
 def restore_with_face_helper(
         np_image: np.ndarray,
         face_helper: FaceRestoreHelper,
-        restore_face: Callable[[torch.Tensor], torch.Tensor],
+        restore_face_fn: Callable[[torch.Tensor], torch.Tensor],
         enhancement_options: EnhancementOptions,
         np_mask: Union[np.ndarray, None]
 ) -> np.ndarray:
@@ -145,7 +158,7 @@ def restore_with_face_helper(
             # noinspection PyBroadException
             try:
                 with torch.no_grad():
-                    cropped_face_t = restore_face(cropped_face_t)
+                    cropped_face_t = restore_face_fn(cropped_face_t)
                 shared.torch_gc()
             except Exception as e:
                 logger.error(f'Failed face-restoration inference, {str(e)}')
@@ -234,9 +247,9 @@ def restore_with_face_helper(
     return result_img
 
 
-class FaceRestoration(object):
-    # noinspection PyMethodMayBeStatic
-    def name(self):
+class FaceRestoration:
+    @classmethod
+    def name(cls):
         return "None"
 
     # noinspection PyMethodMayBeStatic,PyUnusedLocal
@@ -251,7 +264,7 @@ class CommonFaceRestoration(FaceRestoration):
 
     def __init__(self, model_path: str, face_size: int = 512):
         super().__init__()
-        self.net: Union[spandrel.ModelDescriptor, None] = None
+        self.net: spandrel.ModelDescriptor | nn.Module | None = None
         self.model_path = model_path
         self.face_size = face_size
         os.makedirs(model_path, exist_ok=True)
@@ -297,7 +310,7 @@ class CommonFaceRestoration(FaceRestoration):
     def restore_with_helper(
             self,
             np_image: np.ndarray,
-            restore_face: Callable[[torch.Tensor], torch.Tensor],
+            restore_face_fn: Callable[[torch.Tensor], torch.Tensor],
             enhancement_options,
             np_mask: np.ndarray = None
     ) -> np.ndarray:
@@ -307,7 +320,33 @@ class CommonFaceRestoration(FaceRestoration):
         return restore_with_face_helper(
             np_image,
             self.face_helper,
-            restore_face,
+            restore_face_fn,
             enhancement_options,
             np_mask
         )
+
+
+def restore_face(
+        image: Image.Image,
+        instance: FaceRestorerCodeFormer | FaceRestorerGFPGAN,
+        enhancement_options: EnhancementOptions,
+        np_mask: np.ndarray = None
+) -> Image.Image:
+    result_image = image
+
+    original_image = result_image.copy()
+    # noinspection PyTypeChecker
+    numpy_image = np.array(result_image)
+    numpy_image = instance.restore(
+        numpy_image,
+        enhancement_options=enhancement_options,
+        np_mask=np_mask
+    )
+    restored_image = Image.fromarray(numpy_image)
+    result_image = Image.blend(
+        original_image,
+        restored_image,
+        enhancement_options.face_enhancement_options.restorer_visibility
+    )
+
+    return result_image

@@ -23,6 +23,13 @@ from .conf.settings import (
     FaceRestorer,
 )  # noqa: E402
 
+from .upscalers import (
+    UpscalerSwinIRLarge,
+    UpscalerSwinIRSmall,
+    UpscalerRealESRGAN,
+    UpscalerLanczos,
+)  # noqa: E402
+
 
 __all__ = [
     "settings",
@@ -39,4 +46,8 @@ __all__ = [
     "FaceSwapper",
     "FaceMasker",
     "FaceRestorer",
+    "UpscalerLanczos",
+    "UpscalerRealESRGAN",
+    "UpscalerSwinIRSmall",
+    "UpscalerSwinIRLarge",
 ]

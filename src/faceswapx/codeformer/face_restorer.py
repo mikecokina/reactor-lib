@@ -88,7 +88,7 @@ def enhance_image(
         face_restoration_cache.key = FaceRestorer.codeformer.value
 
     logger.info(
-        "Restoring the fac with %s (weight: %s)",
+        "Restoring the face with %s (weight: %s)",
         FaceRestorerCodeFormer.name(),
         enhancement_options.face_enhancement_options.restorer_weight
     )

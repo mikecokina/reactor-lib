@@ -123,9 +123,39 @@ def resize_image(resize_mode, im, width, height, upscaler_name=None):
 
 
 def get_image(
-        img: Image.Image | str,
-        **kwargs
+    img: Image.Image | str,
+    **kwargs
 ) -> Image.Image:
+    """
+    Load an image and optionally downscale if it's larger than the safe limit.
+
+    Args:
+        img (Image.Image | str): A PIL.Image instance or path to an image file.
+        **kwargs:
+            scale (bool, optional): If True, resize any image that exceeds the
+                maximum megapixel limit. Defaults to False.
+            max_size (tuple[int, int], optional): (W, H) defining the safe maximum
+                size. Defaults to (1024, 1280).
+
+    Returns:
+        Image.Image: The loaded (and possibly resized) image.
+    """
+    scale = kwargs.pop("scale", True)
+    max_size = kwargs.pop("max_size", (960, 1280))
+    max_mpix = max_size[0] * max_size[1]
+
     if isinstance(img, Image.Image):
-        return img
-    return read(img, **kwargs)
+        image = img
+    else:
+        image = read(img, **kwargs)  # your read() function
+
+    if scale:
+        cur_mpix = image.width * image.height
+        if cur_mpix > max_mpix:
+            # compute scaling factor to bring area down close to max_mpix
+            factor = np.sqrt(max_mpix / cur_mpix)
+            new_w = int(image.width * factor)
+            new_h = int(image.height * factor)
+            image = image.resize((new_w, new_h), Image.Resampling.BICUBIC)
+
+    return image

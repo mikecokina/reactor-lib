@@ -92,13 +92,15 @@ def enhance_image(
         enhancement_options: EnhancementOptions,
         np_mask: np.ndarray = None
 ) -> Image.Image:
-    if not face_restoration_cache.model:
-        codeformer = FaceRestorerGFPGAN.setup_model(
+    is_not_current_model = face_restoration_cache.key != FaceRestorer.gfpgan.value
+    is_not_cached = not face_restoration_cache.model
+    if is_not_cached or is_not_current_model:
+        gfpgan = FaceRestorerGFPGAN.setup_model(
             dirname=settings.GFPGAN_MODEL_DIR,
             face_size=enhancement_options.face_enhancement_options.face_size
         )
-        face_restoration_cache.model = codeformer
-        face_restoration_cache.key = FaceRestorerGFPGAN.name()
+        face_restoration_cache.model = gfpgan
+        face_restoration_cache.key = FaceRestorer.gfpgan.value
 
     logger.info(
         "Restoring the fac with %s (weight: %s)",

@@ -9,6 +9,8 @@ from torchvision.transforms.functional import normalize
 from .. import settings
 
 from ._compatibility import _apply
+from ..logger import logger
+
 _apply()
 
 from basicsr.utils import img2tensor, tensor2img  # noqa: E402
@@ -106,7 +108,7 @@ class GFPGANer:
                 # convert to image
                 restored_face = tensor2img(output.squeeze(0), rgb2bgr=True, min_max=(-1, 1))
             except RuntimeError as error:
-                print(f'\tFailed inference for GFPGAN: {error}.')
+                logger.error(f'\tFailed inference for GFPGAN: {error}.')
                 restored_face = cropped_face
 
             restored_face = restored_face.astype('uint8')

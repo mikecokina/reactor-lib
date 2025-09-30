@@ -89,7 +89,9 @@ pip install --pre --index-url https://aiinfra.pkgs.visualstudio.com/PublicPackag
 
 A simple image-to-image swap interface is provided in the file `ui/img2img.py`.
 A simple image-to-video swap interface is provided in the file `ui/img2vid.py`.
-Run it as a Python script. First, install `gradio==5.13.1`.
+Run it as a Python script. First, install `gradio==5.47.2`.
+
+> __NOTE__: If you see `Waiting for file(s) to finish uploading, please retry.` when reuploading an image, you can ignore it — this is just an annoying Gradio bug.
 
 Example: run from console with command:
 

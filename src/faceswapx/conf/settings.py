@@ -360,7 +360,7 @@ class Settings(_Const, DefaultSettings):
 
             if key == "FACE_RESTORER":
                 if not isinstance(value, FaceRestorer):
-                    raise ValueError("FACE_SWAPPER value have to be a value of FaceSwapper enum")
+                    raise ValueError("FACE_RESTORER value have to be a value of FaceRestorer enum")
                 cls.FACE_RESTORER = value
 
     @property

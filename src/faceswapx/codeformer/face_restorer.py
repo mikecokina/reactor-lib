@@ -77,13 +77,15 @@ def enhance_image(
         enhancement_options: EnhancementOptions,
         np_mask: np.ndarray = None
 ) -> Image.Image:
-    if not face_restoration_cache.model:
+    is_not_current_model = face_restoration_cache.key != FaceRestorer.codeformer.value
+    is_not_cached = not face_restoration_cache.model
+    if is_not_cached or is_not_current_model:
         codeformer = FaceRestorerCodeFormer.setup_model(
             dirname=settings.CODEFORMER_MODEL_DIR,
             face_size=enhancement_options.face_enhancement_options.face_size
         )
         face_restoration_cache.model = codeformer
-        face_restoration_cache.key = FaceRestorerCodeFormer.name()
+        face_restoration_cache.key = FaceRestorer.codeformer.value
 
     logger.info(
         "Restoring the fac with %s (weight: %s)",
